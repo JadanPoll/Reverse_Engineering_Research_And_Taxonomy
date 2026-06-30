@@ -1,0 +1,159 @@
+{
+  "family": "win32_messages",
+  "description": "Win32 window message (WM_*) constants for GUI code. Triggered when any message-loop or window-class API is present.",
+  "triggers": [
+    "RegisterClassExA", "RegisterClassExW",
+    "CreateWindowExA", "CreateWindowExW",
+    "DefWindowProcA", "DefWindowProcW",
+    "SendMessageA", "SendMessageW",
+    "PostMessageA", "PostMessageW",
+    "DispatchMessageA", "DispatchMessageW",
+    "GetMessageA", "GetMessageW",
+    "PeekMessageA", "PeekMessageW",
+    "TranslateMessage",
+    "PostQuitMessage",
+    "DestroyWindow",
+    "SetWindowLongA", "SetWindowLongW",
+    "GetWindowLongA", "GetWindowLongW",
+    "CallWindowProcA", "CallWindowProcW"
+  ],
+  "call_annotations": {
+    "SendMessageA": {
+      "1": {
+        "0x1":   "WM_CREATE",
+        "0x2":   "WM_DESTROY",
+        "0x3":   "WM_MOVE",
+        "0x5":   "WM_SIZE",
+        "0xf":   "WM_PAINT",
+        "0x10":  "WM_CLOSE",
+        "0x12":  "WM_QUIT",
+        "0x18":  "WM_SHOWWINDOW",
+        "0x100": "WM_KEYDOWN",
+        "0x101": "WM_KEYUP",
+        "0x102": "WM_CHAR",
+        "0x111": "WM_COMMAND",
+        "0x112": "WM_SYSCOMMAND",
+        "0x113": "WM_TIMER",
+        "0x200": "WM_MOUSEMOVE",
+        "0x201": "WM_LBUTTONDOWN",
+        "0x202": "WM_LBUTTONUP",
+        "0x204": "WM_RBUTTONDOWN",
+        "0x205": "WM_RBUTTONUP",
+        "0x20a": "WM_MOUSEWHEEL",
+        "0x400": "WM_USER"
+      }
+    },
+    "SendMessageW": {
+      "1": {
+        "0x1":   "WM_CREATE",
+        "0x2":   "WM_DESTROY",
+        "0xf":   "WM_PAINT",
+        "0x10":  "WM_CLOSE",
+        "0x12":  "WM_QUIT",
+        "0x111": "WM_COMMAND",
+        "0x112": "WM_SYSCOMMAND",
+        "0x113": "WM_TIMER",
+        "0x200": "WM_MOUSEMOVE",
+        "0x201": "WM_LBUTTONDOWN",
+        "0x400": "WM_USER"
+      }
+    },
+    "PostMessageA": {
+      "1": {
+        "0x1":   "WM_CREATE",
+        "0x2":   "WM_DESTROY",
+        "0xf":   "WM_PAINT",
+        "0x10":  "WM_CLOSE",
+        "0x12":  "WM_QUIT",
+        "0x111": "WM_COMMAND",
+        "0x113": "WM_TIMER",
+        "0x400": "WM_USER"
+      }
+    },
+    "PostMessageW": {
+      "1": {
+        "0x1":   "WM_CREATE",
+        "0x2":   "WM_DESTROY",
+        "0xf":   "WM_PAINT",
+        "0x10":  "WM_CLOSE",
+        "0x12":  "WM_QUIT",
+        "0x111": "WM_COMMAND",
+        "0x113": "WM_TIMER",
+        "0x400": "WM_USER"
+      }
+    },
+    "SetWindowLongA": {
+      "1": {
+        "0xfffffffc": "GWL_WNDPROC (-4)",
+        "0xfffffff0": "GWL_HINSTANCE (-16)",
+        "0xfffffffe": "GWL_ID (-2)",
+        "0xfffffff4": "GWL_STYLE (-20)",
+        "0xfffffff8": "GWL_EXSTYLE (-8)"
+      }
+    },
+    "GetWindowLongA": {
+      "1": {
+        "0xfffffffc": "GWL_WNDPROC (-4)",
+        "0xfffffff0": "GWL_HINSTANCE (-16)",
+        "0xfffffffe": "GWL_ID (-2)",
+        "0xfffffff4": "GWL_STYLE (-20)",
+        "0xfffffff8": "GWL_EXSTYLE (-8)"
+      }
+    }
+  },
+  "comparison_annotations": {
+    "comment": "WM_* values annotated in == / != comparisons. Only activated when GUI API family is detected. Values 1 and 2 included because in a WndProc dispatch chain they are unambiguously WM_CREATE and WM_DESTROY.",
+    "0x1":   "WM_CREATE",
+    "0x2":   "WM_DESTROY",
+    "0x3":   "WM_MOVE",
+    "0x5":   "WM_SIZE",
+    "0x6":   "WM_ACTIVATE",
+    "0x7":   "WM_SETFOCUS",
+    "0x8":   "WM_KILLFOCUS",
+    "0xc":   "WM_SETTEXT",
+    "0xd":   "WM_GETTEXT",
+    "0xf":   "WM_PAINT",
+    "0x10":  "WM_CLOSE",
+    "0x11":  "WM_QUERYENDSESSION",
+    "0x12":  "WM_QUIT",
+    "0x14":  "WM_ERASEBKGND",
+    "0x18":  "WM_SHOWWINDOW",
+    "0x1a":  "WM_SETTINGCHANGE",
+    "0x47":  "WM_WINDOWPOSCHANGED",
+    "0x81":  "WM_NCCREATE",
+    "0x82":  "WM_NCDESTROY",
+    "0x100": "WM_KEYDOWN",
+    "0x101": "WM_KEYUP",
+    "0x102": "WM_CHAR",
+    "0x103": "WM_DEADCHAR",
+    "0x104": "WM_SYSKEYDOWN",
+    "0x105": "WM_SYSKEYUP",
+    "0x106": "WM_SYSCHAR",
+    "0x10f": "WM_INITDIALOG",
+    "0x111": "WM_COMMAND",
+    "0x112": "WM_SYSCOMMAND",
+    "0x113": "WM_TIMER",
+    "0x115": "WM_VSCROLL",
+    "0x116": "WM_HSCROLL",
+    "0x11a": "WM_INITMENU",
+    "0x11b": "WM_INITMENUPOPUP",
+    "0x200": "WM_MOUSEMOVE",
+    "0x201": "WM_LBUTTONDOWN",
+    "0x202": "WM_LBUTTONUP",
+    "0x203": "WM_LBUTTONDBLCLK",
+    "0x204": "WM_RBUTTONDOWN",
+    "0x205": "WM_RBUTTONUP",
+    "0x206": "WM_RBUTTONDBLCLK",
+    "0x207": "WM_MBUTTONDOWN",
+    "0x208": "WM_MBUTTONUP",
+    "0x20a": "WM_MOUSEWHEEL",
+    "0x20e": "WM_MOUSEHWHEEL",
+    "0x215": "WM_CAPTURECHANGED",
+    "0x231": "WM_ENTERSIZEMOVE",
+    "0x232": "WM_EXITSIZEMOVE",
+    "0x2a1": "WM_MOUSEHOVER",
+    "0x400": "WM_USER",
+    "0x8000": "WM_APP"
+  },
+  "global_sentinels": {}
+}

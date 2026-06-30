@@ -1,0 +1,124 @@
+{
+  "family": "winsock",
+  "description": "Winsock 2 constants for network I/O. Triggered when any socket/WSA API is present in the calltree.",
+  "triggers": [
+    "WSAStartup", "WSACleanup", "WSAGetLastError", "WSAConnect",
+    "WSARecv", "WSASend", "WSARecvFrom", "WSASendTo",
+    "socket", "bind", "connect", "accept", "listen",
+    "send", "recv", "sendto", "recvfrom",
+    "select", "getaddrinfo", "freeaddrinfo", "gethostbyname",
+    "closesocket", "ioctlsocket", "setsockopt", "getsockopt",
+    "getsockname", "getpeername", "htons", "htonl", "ntohs", "ntohl"
+  ],
+  "call_annotations": {
+    "socket": {
+      "0": {
+        "0x0": "AF_UNSPEC",
+        "0x1": "AF_UNIX",
+        "0x2": "AF_INET",
+        "0x6": "AF_IPX",
+        "0x10": "AF_APPLETALK",
+        "0x17": "AF_INET6"
+      },
+      "1": {
+        "0x1": "SOCK_STREAM",
+        "0x2": "SOCK_DGRAM",
+        "0x3": "SOCK_RAW",
+        "0x5": "SOCK_SEQPACKET"
+      },
+      "2": {
+        "0x0": "IPPROTO_IP",
+        "0x1": "IPPROTO_ICMP",
+        "0x6": "IPPROTO_TCP",
+        "0x11": "IPPROTO_UDP",
+        "0x3a": "IPPROTO_ICMPV6"
+      }
+    },
+    "WSAStartup": {
+      "0": {
+        "0x101": "MAKEWORD(1,1) [Winsock 1.1]",
+        "0x202": "MAKEWORD(2,2) [Winsock 2.2]"
+      }
+    },
+    "setsockopt": {
+      "1": {
+        "0xffff": "SOL_SOCKET",
+        "0x6":    "IPPROTO_TCP"
+      },
+      "2": {
+        "0x1":    "SO_DEBUG",
+        "0x4":    "SO_REUSEADDR",
+        "0x8":    "SO_KEEPALIVE",
+        "0x10":   "SO_DONTROUTE",
+        "0x20":   "SO_BROADCAST",
+        "0x80":   "SO_LINGER",
+        "0x1001": "SO_RCVBUF",
+        "0x1002": "SO_SNDTIMEO",
+        "0x1003": "SO_RCVTIMEO",
+        "0x1":    "TCP_NODELAY"
+      }
+    },
+    "ioctlsocket": {
+      "1": {
+        "0x8004667e": "FIONBIO",
+        "0x4004667f": "FIONREAD",
+        "0x80047307": "FIOASYNC"
+      }
+    },
+    "WSARecv": {
+      "4": {
+        "0x0": "MSG_NONE",
+        "0x1": "MSG_OOB",
+        "0x2": "MSG_PEEK",
+        "0x4": "MSG_DONTROUTE",
+        "0x8": "MSG_PARTIAL"
+      }
+    },
+    "send": {
+      "3": {
+        "0x0": "MSG_NONE",
+        "0x1": "MSG_OOB",
+        "0x4": "MSG_DONTROUTE"
+      }
+    },
+    "recv": {
+      "3": {
+        "0x0": "MSG_NONE",
+        "0x1": "MSG_OOB",
+        "0x2": "MSG_PEEK"
+      }
+    }
+  },
+  "comparison_annotations": {
+    "0x2733": "WSAEWOULDBLOCK",
+    "0x2736": "WSAEINPROGRESS",
+    "0x2737": "WSAEALREADY",
+    "0x2738": "WSAENOTSOCK",
+    "0x273f": "WSAEDESTADDRREQ",
+    "0x2740": "WSAEMSGSIZE",
+    "0x2741": "WSAEPROTOTYPE",
+    "0x2742": "WSAENOPROTOOPT",
+    "0x2743": "WSAEPROTONOSUPPORT",
+    "0x274d": "WSAEADDRINUSE",
+    "0x274e": "WSAEADDRNOTAVAIL",
+    "0x274f": "WSAENETDOWN",
+    "0x2750": "WSAENETUNREACH",
+    "0x2751": "WSAENETRESET",
+    "0x2752": "WSAECONNABORTED",
+    "0x2753": "WSAECONNRESET",
+    "0x2754": "WSAENOBUFS",
+    "0x2757": "WSAEISCONN",
+    "0x2758": "WSAENOTCONN",
+    "0x275d": "WSAETIMEDOUT",
+    "0x275e": "WSAECONNREFUSED",
+    "0x2761": "WSAEHOSTUNREACH",
+    "0x276b": "WSAEPROCLIM",
+    "0x276d": "WSASYSNOTREADY",
+    "0x276e": "WSAVERNOTSUPPORTED",
+    "0x276f": "WSANOTINITIALISED"
+  },
+  "global_sentinels": {
+    "comment": "INVALID_SOCKET appears in comparisons and as return values from socket()/accept(). Truly unambiguous in any binary with Winsock present.",
+    "0xffffffffffffffff": "INVALID_SOCKET"
+  }
+}

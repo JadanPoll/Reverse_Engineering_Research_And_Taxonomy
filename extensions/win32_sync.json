@@ -1,0 +1,109 @@
+{
+  "family": "win32_sync",
+  "description": "Win32 synchronization primitives: WaitForSingleObject timeouts and return values, event/mutex creation flags, thread priorities.",
+  "triggers": [
+    "WaitForSingleObject", "WaitForMultipleObjects",
+    "WaitForSingleObjectEx", "WaitForMultipleObjectsEx",
+    "CreateEventA", "CreateEventW",
+    "OpenEventA", "OpenEventW",
+    "SetEvent", "ResetEvent", "PulseEvent",
+    "CreateMutexA", "CreateMutexW",
+    "OpenMutexA", "OpenMutexW",
+    "ReleaseMutex",
+    "CreateSemaphoreA", "CreateSemaphoreW",
+    "ReleaseSemaphore",
+    "CreateThread", "CreateRemoteThread",
+    "SuspendThread", "ResumeThread",
+    "GetExitCodeThread",
+    "TerminateThread",
+    "Sleep", "SleepEx",
+    "SwitchToThread",
+    "SetThreadPriority", "GetThreadPriority",
+    "InitializeCriticalSection",
+    "EnterCriticalSection", "LeaveCriticalSection",
+    "TryEnterCriticalSection",
+    "DeleteCriticalSection",
+    "InitializeCriticalSectionAndSpinCount",
+    "OpenThread"
+  ],
+  "call_annotations": {
+    "WaitForSingleObject": {
+      "1": {
+        "0x0":        "NOWAIT (poll — returns immediately)",
+        "0xffffffff": "INFINITE"
+      }
+    },
+    "WaitForSingleObjectEx": {
+      "1": {
+        "0x0":        "NOWAIT (poll — returns immediately)",
+        "0xffffffff": "INFINITE"
+      }
+    },
+    "WaitForMultipleObjects": {
+      "3": {
+        "0x0":        "NOWAIT (poll — returns immediately)",
+        "0xffffffff": "INFINITE"
+      }
+    },
+    "WaitForMultipleObjectsEx": {
+      "3": {
+        "0x0":        "NOWAIT (poll — returns immediately)",
+        "0xffffffff": "INFINITE"
+      }
+    },
+    "Sleep": {
+      "0": {
+        "0x0":        "Sleep(0) — yield to other threads",
+        "0xffffffff": "Sleep(INFINITE) — permanent block"
+      }
+    },
+    "SleepEx": {
+      "0": {
+        "0x0":        "Sleep(0) — yield to other threads",
+        "0xffffffff": "Sleep(INFINITE) — permanent block"
+      }
+    },
+    "CreateEventA": {
+      "1": {
+        "0x0": "bManualReset=FALSE (auto-reset event)",
+        "0x1": "bManualReset=TRUE (manual-reset event)"
+      },
+      "2": {
+        "0x0": "bInitialState=FALSE (non-signaled)",
+        "0x1": "bInitialState=TRUE (initially signaled)"
+      }
+    },
+    "CreateEventW": {
+      "1": {
+        "0x0": "bManualReset=FALSE (auto-reset event)",
+        "0x1": "bManualReset=TRUE (manual-reset event)"
+      },
+      "2": {
+        "0x0": "bInitialState=FALSE (non-signaled)",
+        "0x1": "bInitialState=TRUE (initially signaled)"
+      }
+    },
+    "SetThreadPriority": {
+      "1": {
+        "0xfffffffe": "THREAD_PRIORITY_IDLE (-2)",
+        "0xffffffff": "THREAD_PRIORITY_LOWEST (-1)",
+        "0x0":        "THREAD_PRIORITY_NORMAL (0)",
+        "0x1":        "THREAD_PRIORITY_ABOVE_NORMAL (1)",
+        "0x2":        "THREAD_PRIORITY_HIGHEST (2)",
+        "0xf":        "THREAD_PRIORITY_TIME_CRITICAL (15)"
+      }
+    },
+    "InitializeCriticalSectionAndSpinCount": {
+      "1": {
+        "0x0":    "SpinCount=0 (no spin, always sleep on contention)",
+        "0x400":  "SpinCount=1024 (typical server-side value)",
+        "0x1000": "SpinCount=4096"
+      }
+    }
+  },
+  "comparison_annotations": {
+    "comment": "WaitForSingleObject return codes. 0x102=WAIT_TIMEOUT is unambiguous. 0x80=WAIT_ABANDONED removed — fires as false positive on UTF-8 continuation byte masks, bitmasks, and other 0x80 literals.",
+    "0x102": "WAIT_TIMEOUT"
+  },
+  "global_sentinels": {}
+}

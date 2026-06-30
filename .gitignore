@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Generated corpus / large data artifacts
+pcode_corpus*.jsonl
+*.npz
+pcode_clusters.json
+pcode_wl.json
+geometry_data.json
+talpha_results.json
+sweep_baseline.json
+
+# Ghidra output artifacts (target-specific, regenerate with ghidra_dump_calltree.py)
+ghidra_calltree.json
+ghidra_knowledge.json
+ghidra_names.json
+*.gbf
+*.rep/
+
+# Downloaded / installed tools
+z3-413/
+linux_libs/
+
+# TESTS directory — contains multi-GB calltree + Ghidra project files
+TESTS/
+
+# OS
+.DS_Store
+Thumbs.db
