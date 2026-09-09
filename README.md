@@ -1,11 +1,11 @@
-# Reverse_Engineering_Research_And_Taxonomy
+## Reverse_Engineering_Research_And_Taxonomy
 
-# Introduction
-
-## Project Motivations
-
-
-## Learnings, Successes etc.
+### Introduction
+Design Hypothesis: One can, in conjunction with LLMs, effeciently create a high quality "textbook" on a compiled program through reverse engineering.
+### Project Motivations
 
 
-## Continuations, if i get the credits
+### Learnings, Successes etc.
+
+
+### Continuations, if i get the credits
