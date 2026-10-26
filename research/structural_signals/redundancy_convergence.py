@@ -14,7 +14,7 @@ how many independent observations are needed to characterize the init spec compl
 import json, ctypes, re, sys, time, math
 from dynamic.pcode_sym import PCODESymEx
 from dynamic.execute import DLLExecutor
-from pe_utils import PE
+from structural.pe_utils import PE
 from dynamic.implication_graph import extract_constraint_nodes, build_implication_graph
 from collections import defaultdict
 
