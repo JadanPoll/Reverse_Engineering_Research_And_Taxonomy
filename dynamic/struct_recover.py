@@ -246,7 +246,7 @@ class ProgramGeometry:
     def _emit_kb(self, clusters: list) -> None:
         """Emit discovered struct fields to the knowledge bus as EPHEMERAL observations."""
         try:
-            import knowledge_bus as kb
+            from evidence import knowledge_bus as kb
         except ImportError:
             return
         for c in clusters:
