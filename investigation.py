@@ -101,18 +101,27 @@ def add_hypothesis(text: str, *, prior: str = "plausible", why_prior: str = "") 
         "prior": prior.strip(),
         "why_prior": why_prior.strip(),
         "status": "open",
+        "updates": [],
     })
     save(state)
     return state["hypotheses"][-1]
 
 
-def set_hypothesis_status(hid: str, status: str) -> None:
+def set_hypothesis_status(hid: str, status: str, *, reason: str = "") -> None:
+    """Update belief status without pretending the evidence updated it automatically."""
     if status not in VALID_HYPOTHESIS_STATUS:
         raise ValueError(f"invalid hypothesis status: {status}")
     state = _require_active()
     for h in state["hypotheses"]:
         if h["id"] == hid:
+            old = h.get("status", "open")
             h["status"] = status
+            h.setdefault("updates", []).append({
+                "from": old,
+                "to": status,
+                "reason": reason.strip(),
+                "at": _now(),
+            })
             save(state)
             return
     raise ValueError(f"unknown hypothesis id: {hid}")
@@ -183,6 +192,12 @@ def summary(state: dict | None = None) -> str:
             lines.append(
                 f"  {h['id']} [{h['status']}; prior={h['prior']}] {h['text']}"
             )
+            if h.get("why_prior"):
+                lines.append(f"     prior rationale: {h['why_prior']}")
+            if h.get("updates"):
+                latest = h["updates"][-1]
+                if latest.get("reason"):
+                    lines.append(f"     latest update: {latest['reason']}")
     if state.get("open_uncertainties"):
         lines.append("Open consequential uncertainties:")
         for x in state["open_uncertainties"]:
