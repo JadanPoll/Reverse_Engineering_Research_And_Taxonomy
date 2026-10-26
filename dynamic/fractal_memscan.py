@@ -8,9 +8,9 @@ Within those, further changes promote again — self-similar at every level.
 Regions that stabilize demote back toward the cold tier.
 
 Usage:
-    python fractal_memscan.py --pid PID [options]
-    python fractal_memscan.py --name Hss.Store.Client [options]
-    python fractal_memscan.py --pid PID --filter-module Hss.Store.Client.dll
+    python -m dynamic.fractal_memscan --pid PID [options]
+    python -m dynamic.fractal_memscan --name PROCESS_SUBSTRING [options]
+    python -m dynamic.fractal_memscan --pid PID --filter-module target.dll
 
 Options:
     --pid PID               Target process PID
@@ -161,13 +161,14 @@ EXCLUDE_RANGES = [
 #
 # Imported from ground_truth.py (H=1 single source of truth).
 # ground_truth.verify() is the oracle shared by all three analysis layers:
-#   Ghidra (static), fractal_memscan (dynamic), runtime_probe (Frida live).
+#   Ghidra/static evidence, memory scanning, and other runtime observations.
 # A hit from any layer is definitive.
 
 import sys as _sys, os as _os
 _here = _os.path.dirname(_os.path.abspath(__file__))
-if _here not in _sys.path:
-    _sys.path.insert(0, _here)
+_root = _os.path.dirname(_here)
+if _root not in _sys.path:
+    _sys.path.insert(0, _root)
 
 try:
     from evidence.target_config import verify
@@ -176,7 +177,7 @@ except Exception:
     try:
         from Crypto.Cipher import AES as _AES
         def verify(key: bytes, iv: bytes) -> bool:
-            return False  # no ground_truth.py — oracle disabled
+            return False  # no target oracle configured
         _HAS_VERIFY = False
     except ImportError:
         def verify(key: bytes, iv: bytes) -> bool:
