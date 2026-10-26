@@ -5,6 +5,10 @@ USAGE:
     py -3.13 cli.py <command> [args]
 
 COMMANDS:
+    investigation       Show/update the active question, hypotheses, evidence, and stop rule
+    capabilities        Rediscover capabilities by investigation goal
+    brief <label>       Produce a bounded structural evidence packet
+    status              Show question-relative investigation status
     sweep               Classify all stripped test DLLs, print accuracy report
     sweep --filter X Y  Classify only test dirs X, Y
     classify <dll> <func>        Classify one function (export name or 0xVA)
@@ -14,12 +18,6 @@ COMMANDS:
     extract-vas         Patch ground_truth.py VAs for all test dirs
     calibrate           Measure machine-specific thresholds → dynamic/calibration.json
     constants           Print all constants with category and provenance
-    brief <label>       Produce a bounded structural evidence packet
-    capabilities        Rediscover capabilities by investigation goal
-    status              Show overall analysis state
-    next [N]            Show top N functions to investigate next
-    floors              Show named analysis floors
-    holes               Print the full compound-score map
 
 CRITICAL DISTINCTIONS (common LLM mistakes):
     --args 0  Use for test-wrapper exports (no inputs, return value is fixed)
@@ -28,9 +26,12 @@ CRITICAL DISTINCTIONS (common LLM mistakes):
 
     classify.run() takes executor=DLLExecutor(...), NOT dll_path=
     KNOWN_VAS in ground_truth.py are for the DEBUG dll, not _stripped.dll
-    dynamic/runtime_probe.py ≠ runtime_probe.py (different files, different purpose)
 
 EXAMPLES:
+    py -3.13 cli.py capabilities
+    py -3.13 cli.py investigation new "How does dispatch work?" --target mgba --stop "dispatch mechanism is supported by discriminating evidence"
+    py -3.13 cli.py status
+    py -3.13 cli.py brief
     py -3.13 cli.py sweep
     py -3.13 cli.py sweep --filter state_machines crc_checksum
     py -3.13 cli.py classify TESTS/prng_patterns/prng_patterns.dll xorshift_nonzero_test
@@ -197,8 +198,15 @@ def cmd_brief(args):
     )
     missing = [p for p in required if not os.path.exists(os.path.join(_here, p))]
 
-    if args.list and missing:
-        for label in cached_labels:
+    if args.list:
+        labels = cached_labels
+        if not missing:
+            try:
+                import generate_brief
+                labels = sorted(set(generate_brief.load_data()["dll_labels"]))
+            except Exception:
+                pass
+        for label in labels:
             print(label)
         return
 
