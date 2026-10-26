@@ -6,9 +6,17 @@
 
 ## Start here
 
+Do **not** try to memorize the toolkit's command set. Start with:
+
+```
+python cli.py capabilities
+```
+
+It maps an investigation question to the relevant capabilities. For LLM use, `python cli.py capabilities --json` exposes the same map in machine-readable form.
+
 | I want to… | Start with | Why |
 | --- | --- | --- |
-| See what an existing analysis knows, misses, or recommends next | `python cli.py status` / `python cli.py next 10` | Highest-level view of progress; requires prior artifacts for many functions |
+| See what an existing analysis knows, misses, or recommends next | `python cli.py capabilities`, then `python cli.py status` / `python cli.py next 10` | Highest-level view of progress; requires prior artifacts for many functions |
 | Try the dynamic classifier on a particular binary/function | `python cli.py --help`; inspect `cli.py` examples | The current classifier's command entry point; execution is platform/dependency-specific |
 | Understand how machine-code structure is categorized | [TAXONOMY.md](TAXONOMY.md) | Function archetypes, graph motifs, limitations and investigation priorities |
 | Understand the P-Code experiments | [PCODE_PIPELINE.md](PCODE_PIPELINE.md) | Lifting, clustering and corpus-level analysis |
@@ -47,4 +55,4 @@ Run commands from the repo root. Some scripts assume Windows, Ghidra, preexistin
 - **Make results discoverable.** A future reader should be able to find the relevant binary, question, evidence, and next step without reconstructing the entire project's history.
 - **Prioritize educational value.** A small convincing case study of an unknown binary matters more than many impressive-looking unsituated metrics.
 
-**Current consolidation boundary:** Keep shared modules and entry points at their existing import paths until their actual callers and runtime assumptions can be checked. Evaluate remaining root files by whether they are (a) reusable capability, (b) evidence/educational finding, (c) independent experiment, or (d) redundant/unclear. Only the last group belongs in quarantine. Do not conflate a one-off experiment with a disposable discovery.\n\n**Milestone worth expanding for others:** on a previously unseen stripped binary, independently produce a useful, evidence-backed explanation of a nontrivial subsystem, including a successful discriminating check, with limited manual guidance. Until that is repeatable, prefer experiments and minimal maintenance over more infrastructure.
+**Current consolidation boundary:** Keep shared modules and entry points at their existing import paths until their actual callers and runtime assumptions can be checked. Specialized capabilities do not need to disappear merely because a human would forget their commands; they do need to be cheaply rediscoverable from the question being asked. Evaluate remaining root files by whether they are (a) reusable capability, (b) evidence/educational finding, (c) independent experiment, or (d) redundant/unclear. Only the last group belongs in quarantine. Do not conflate a one-off experiment with a disposable discovery.\n\n**Milestone worth expanding for others:** on a previously unseen stripped binary, independently produce a useful, evidence-backed explanation of a nontrivial subsystem, including a successful discriminating check, with limited manual guidance. Until that is repeatable, prefer experiments and minimal maintenance over more infrastructure.
