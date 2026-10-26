@@ -14,6 +14,7 @@ COMMANDS:
     extract-vas         Patch ground_truth.py VAs for all test dirs
     calibrate           Measure machine-specific thresholds → dynamic/calibration.json
     constants           Print all constants with category and provenance
+    brief <label>       Produce a bounded structural evidence packet
     capabilities        Rediscover capabilities by investigation goal
     status              Show overall analysis state
     next [N]            Show top N functions to investigate next
@@ -47,13 +48,137 @@ _here = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _here)
 
 
+# ── command: brief ────────────────────────────────────────────────────────────
+
+def _run_stage(script, *extra):
+    """Run one internal corpus stage while keeping the user-facing operation singular."""
+    import subprocess
+    cmd = [sys.executable, os.path.join(_here, script), *extra]
+    result = subprocess.run(cmd, cwd=_here)
+    if result.returncode != 0:
+        raise SystemExit(f"PIPELINE_STAGE_FAILED: {script} exited {result.returncode}")
+
+
+def _compact_brief(markdown, max_functions=5):
+    """Return the smallest structural packet that usually changes the next action."""
+    def section(title, next_title=None):
+        start = markdown.find(title)
+        if start < 0:
+            return ""
+        end = markdown.find(next_title, start + len(title)) if next_title else -1
+        return markdown[start:end if end >= 0 else None].strip()
+
+    overview = section("## Overview", "## Structural Archetypes")
+    interpretation = section("## Interpretation Guide for LLM", "---")
+    explore = section("#### Orchestrators / Controllers", "#### Specific Implementations")
+    rows = []
+    for line in explore.splitlines():
+        if line.startswith("| \`"):
+            rows.append(line)
+        if len(rows) >= max_functions:
+            break
+
+    parts = [overview]
+    if rows:
+        parts += ["## Highest-value initial targets", "\n".join(rows)]
+    parts.append(interpretation)
+    parts.append(
+        "## Evidence descent\n"
+        "The complete brief and underlying corpus artifacts remain available. "
+        "Inspect them only when the active question requires more detail."
+    )
+    return "\n\n".join(p for p in parts if p)
+
+
+def cmd_brief(args):
+    """Produce a bounded structural evidence packet for one analyzed binary.
+
+    By default, reuse persisted corpus artifacts and regenerate only the requested
+    brief. --rebuild-corpus explicitly reruns the expensive shared extraction,
+    normalization, grammar, clustering, and WL pipeline first.
+    """
+    import json
+
+    required = [
+        "pcode_corpus_norm.jsonl",
+        "pcode_grammar_norm.npz",
+        "pcode_clusters.json",
+        "pcode_wl.json",
+    ]
+
+    if args.rebuild_corpus:
+        print("[brief] rebuilding shared structural corpus", file=sys.stderr)
+        _run_stage("pcode_extractor.py")
+        _run_stage("pcode_normalize.py")
+        _run_stage(
+            "pcode_grammar.py",
+            "--corpus", "pcode_corpus_norm.jsonl",
+            "--out", "pcode_grammar_norm.npz",
+        )
+        _run_stage("pcode_cluster.py")
+        _run_stage("pcode_wl.py")
+
+    missing = [p for p in required if not os.path.exists(os.path.join(_here, p))]
+    if missing:
+        print("STRUCTURAL_ARTIFACTS_MISSING", file=sys.stderr)
+        for p in missing:
+            print(f"  - {p}", file=sys.stderr)
+        print(
+            "Run 'python cli.py brief <label> --rebuild-corpus' when source targets are available.",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+
+    import generate_brief
+    data = generate_brief.load_data()
+    labels = sorted(set(data["dll_labels"]))
+
+    if args.list:
+        for label in labels:
+            print(label)
+        return
+
+    if not args.label:
+        print("A binary label is required. Available labels:", file=sys.stderr)
+        for label in labels:
+            print(f"  {label}", file=sys.stderr)
+        raise SystemExit(2)
+
+    if args.label not in labels:
+        print(f"UNKNOWN_BINARY_LABEL: {args.label}", file=sys.stderr)
+        print("Use 'python cli.py brief --list'.", file=sys.stderr)
+        raise SystemExit(2)
+
+    full = generate_brief.generate_brief(args.label, data)
+    out_dir = os.path.join(_here, "briefs")
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, f"{args.label}.md")
+    with open(out_path, "w", encoding="utf-8") as out:
+        out.write(full)
+
+    packet = _compact_brief(full, max_functions=args.targets)
+    if args.full:
+        print(full)
+    elif args.json:
+        print(json.dumps({
+            "binary": args.label,
+            "brief": os.path.relpath(out_path, _here).replace("\\", "/"),
+            "packet": packet,
+            "coverage": "structural orientation; not behavioral proof",
+            "next": "descend into the full brief or targeted tools only if the active question requires it",
+        }, indent=2))
+    else:
+        print(packet)
+        print(f"\n[full brief: {os.path.relpath(out_path, _here)}]")
+
+
 # ── command: capabilities ─────────────────────────────────────────────────────
 
 _CAPABILITIES = [
     ("orient", "What do we know, what is missing, and what should be investigated next?",
      ["status", "next", "floors", "holes"]),
     ("structural-map", "What kind of program structure is present, and where is the unusual code?",
-     ["generate_brief.py", "graph-metrics", "inspect-calltree"]),
+     ["brief", "graph-metrics", "inspect-calltree"]),
     ("function-behavior", "What does this specific function appear to do for concrete inputs?",
      ["classify", "dynamic/nano_sim.py", "dynamic/slice_sim.py"]),
     ("hidden-state", "Is behavior gated by globals, initialization, pointers, or indirect dispatch?",
@@ -537,6 +662,16 @@ def main():
     )
     sub = ap.add_subparsers(dest="command", required=True)
 
+    # Structural brief: one operational capability over the multi-stage P-Code pipeline.
+    p_brief = sub.add_parser("brief", help="Produce a compact structural brief for a binary")
+    p_brief.add_argument("label", nargs="?", help="Analyzed binary label")
+    p_brief.add_argument("--list", action="store_true", help="List available binary labels")
+    p_brief.add_argument("--full", action="store_true", help="Print the complete generated brief")
+    p_brief.add_argument("--json", action="store_true", help="Machine-readable bounded packet")
+    p_brief.add_argument("--targets", type=int, default=5, help="Initial target rows to surface (default 5)")
+    p_brief.add_argument("--rebuild-corpus", action="store_true", dest="rebuild_corpus",
+                         help="Explicitly rerun the expensive shared P-Code corpus pipeline")
+
     # Externalized operational memory. This is the intended discovery surface;
     # the long tail of precise commands should not need to be memorized.
     p_caps = sub.add_parser("capabilities", help="Map investigation questions to available capabilities")
@@ -655,6 +790,7 @@ def main():
         "inspect-calltree": lambda a: _cmd_inspect_calltree(a),
         "read-func":        lambda a: _cmd_read_func(a),
         "vtable-resolve":   lambda a: _cmd_vtable_resolve(a),
+        "brief":          cmd_brief,
         "capabilities":   cmd_capabilities,
         "status":         lambda _: __import__("analyze").cmd_status(),
         "next":           lambda a: __import__("analyze").cmd_next(a.n),
