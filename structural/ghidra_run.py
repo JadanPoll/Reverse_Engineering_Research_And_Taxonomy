@@ -5,15 +5,19 @@ Runs structural/ghidra_dump_calltree.py against a target binary and writes callt
 Validated 2026-05-26 (same invocation pattern as hss_toolkit/ghidra_run.py).
 
 Usage:
-  py -3.13 re_toolkit/ghidra_run.py --calltree --binary foo.dll --proj-dir foo/ghidra_proj --out foo/calltree.json --gt-dir foo/
-  py -3.13 re_toolkit/ghidra_run.py --sanity-only
+  python -m structural.ghidra_run --calltree --binary foo.dll --proj-dir foo/ghidra_proj --out foo/calltree.json
+  python -m structural.ghidra_run --sanity-only
 """
 
 import subprocess, sys, os, argparse
-from winreg import OpenKey, QueryValueEx, HKEY_CURRENT_USER
+
+try:
+    from winreg import OpenKey, QueryValueEx, HKEY_CURRENT_USER
+except ImportError:
+    OpenKey = QueryValueEx = HKEY_CURRENT_USER = None
 
 _here         = os.path.dirname(os.path.abspath(__file__))
-GHIDRA_DIR    = r"C:\Users\nathan37\Desktop\ghidra"
+GHIDRA_DIR    = os.environ.get("GHIDRA_DIR", "")
 CALLTREE_SCRIPT = os.path.join(_here, "ghidra_dump_calltree.py")
 SCRIPT_PATH   = _here
 
@@ -22,19 +26,28 @@ def get_java_home():
     val = os.environ.get("JAVA_HOME")
     if val:
         return val
-    try:
-        with OpenKey(HKEY_CURRENT_USER, r"Environment") as k:
-            val, _ = QueryValueEx(k, "JAVA_HOME")
-            return val
-    except Exception:
-        return None
+    if OpenKey is not None:
+        try:
+            with OpenKey(HKEY_CURRENT_USER, r"Environment") as k:
+                val, _ = QueryValueEx(k, "JAVA_HOME")
+                return val
+        except Exception:
+            pass
+    return None
 
 
 def sanity_check():
     java_home = get_java_home()
-    assert java_home, "JAVA_HOME not set in env or User registry"
-    jvm_dll = os.path.join(java_home, "bin", "server", "jvm.dll")
-    assert os.path.isfile(jvm_dll), f"jvm.dll not found at: {jvm_dll}"
+    assert GHIDRA_DIR, "GHIDRA_DIR is not set"
+    assert os.path.isdir(GHIDRA_DIR), f"GHIDRA_DIR does not exist: {GHIDRA_DIR}"
+    assert java_home, "JAVA_HOME is not set"
+    java_candidates = [
+        os.path.join(java_home, "bin", "server", "jvm.dll"),
+        os.path.join(java_home, "lib", "server", "libjvm.so"),
+        os.path.join(java_home, "lib", "server", "libjvm.dylib"),
+    ]
+    jvm = next((p for p in java_candidates if os.path.isfile(p)), None)
+    assert jvm, f"JVM library not found under JAVA_HOME: {java_home}"
     launch_props = os.path.join(GHIDRA_DIR, "support", "launch.properties")
     text = open(launch_props).read()
     for line in text.splitlines():
@@ -47,7 +60,7 @@ def sanity_check():
             break
     else:
         raise AssertionError("No active JAVA_HOME_OVERRIDE= line in launch.properties")
-    print(f"[OK] jvm.dll = {jvm_dll}")
+    print(f"[OK] JVM = {jvm}")
     print("[OK] Sanity checks passed")
 
 
