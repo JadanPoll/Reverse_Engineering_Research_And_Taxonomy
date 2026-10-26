@@ -132,7 +132,7 @@ def _run_stage(module, *extra):
 
 
 def _compact_brief(markdown, max_functions=5):
-    """Return the smallest structural packet that usually changes the next action."""
+    """Bounded option set for LLM routing; preserve relevance for the LLM to judge."""
     def section(title, next_title=None):
         start = markdown.find(title)
         if start < 0:
@@ -140,26 +140,44 @@ def _compact_brief(markdown, max_functions=5):
         end = markdown.find(next_title, start + len(title)) if next_title else -1
         return markdown[start:end if end >= 0 else None].strip()
 
+    def rows(text, limit):
+        out = []
+        for line in text.splitlines():
+            if line.startswith("| `"):
+                out.append(line)
+            if len(out) >= limit:
+                break
+        return out
+
     overview = section("## Overview", "## Structural Archetypes")
     interpretation = section("## Interpretation Guide for LLM", "---")
-    explore = section("#### Large Novel Functions", "#### Smaller Novel Functions")
-    rows = []
-    for line in explore.splitlines():
-        if line.startswith("| `"):
-            rows.append(line)
-        if len(rows) >= max_functions:
-            break
+    novel = section("#### Large Novel Functions", "#### Smaller Novel Functions")
+    infrastructure = section(
+        "### Likely Infrastructure Despite Low Coverage",
+        "### Structurally Predictable",
+    )
+    predictable = section(
+        "### Structurally Predictable",
+        "## Dominant Grammar Patterns",
+    )
 
     return {
         "overview": overview,
-        "novel_candidates": rows,
+        "candidate_bands": {
+            "novel_expensive": rows(novel, max_functions),
+            "predictable_cheaper": rows(predictable, min(3, max_functions)),
+            "likely_infrastructure": rows(infrastructure, min(2, max_functions)),
+        },
         "interpretation": interpretation,
+        "routing_rule": (
+            "These bands estimate structural role/cost, not relevance. "
+            "Choose among them using the active question and live hypotheses."
+        ),
         "evidence_descent": (
             "The complete brief and underlying corpus artifacts remain available. "
             "Inspect them only when the active question requires more detail."
         ),
     }
-
 
 def cmd_brief(args):
     """Produce a bounded structural evidence packet for one analyzed binary.
@@ -274,10 +292,18 @@ def cmd_brief(args):
         }, indent=2))
     else:
         print(packet["overview"])
-        if packet["novel_candidates"]:
-            print("\n## Structurally novel large candidates")
-            print("These are not relevance-ranked; filter them through the active question.")
-            print("\n".join(packet["novel_candidates"]))
+        print("\n## Bounded candidate option set")
+        print(packet["routing_rule"])
+        labels = [
+            ("novel_expensive", "Structurally novel / likely expensive"),
+            ("predictable_cheaper", "Structurally predictable / likely cheaper"),
+            ("likely_infrastructure", "Likely infrastructure"),
+        ]
+        for key, title in labels:
+            rows = packet["candidate_bands"].get(key, [])
+            if rows:
+                print(f"\n### {title}")
+                print("\n".join(rows))
         print("\n" + packet["interpretation"])
         print("\n## Evidence descent")
         print(packet["evidence_descent"])
