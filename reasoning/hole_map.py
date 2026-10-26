@@ -1,5 +1,5 @@
 """
-analyze.py — H=1 status command for the RE toolkit.
+reasoning/hole_map.py — H=1 status command for the RE toolkit.
 
 Answers the canonical operational questions in ONE command:
   --status    Current analysis state: what's been done, what's a hole.
@@ -33,14 +33,14 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 # ── Load config ───────────────────────────────────────────────────────────────
 
 try:
-    from knowledge_bus import get_verify_hits as _get_verify_hits
+    from evidence.knowledge_bus import get_verify_hits as _get_verify_hits
     _HAS_KB = True
 except Exception:
     _HAS_KB = False
     def _get_verify_hits(min_stability="EPHEMERAL"): return []
 
 try:
-    from ground_truth import (CALLTREE_JSON, NAMES_JSON, KNOWLEDGE_JSON,
+    from evidence.target_config import (CALLTREE_JSON, NAMES_JSON, KNOWLEDGE_JSON,
                                TARGET_DLL, IMAGE_BASE, KNOWN_VAS, KNOWN_STRINGS)
     _GT_OK = True
 except Exception as _e:
