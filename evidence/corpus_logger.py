@@ -1,5 +1,5 @@
 """
-corpus_logger.py — Rolling corpus of ALL 16-byte-aligned observations from T2+ tiers.
+evidence/corpus_logger.py — Rolling corpus of ALL 16-byte-aligned observations from T2+ tiers.
 
 The system is built to confirm known hypotheses (verify() fires when K+IV match).
 The 1/50 rare insight lives in the GAP: INVARIANT values that don't match any
@@ -15,12 +15,12 @@ The rare signal is an INVARIANT value in the corpus that verify() never fires on
 That's the thing you couldn't engineer — only observe.
 
 Usage (called by fractal_memscan.py on T2+ observations):
-    from corpus_logger import log_observation, begin_session, end_session
+    from evidence.corpus_logger import log_observation, begin_session, end_session
 
 Post-hoc analysis:
-    python corpus_analyze.py                    # stability analysis across all sessions
-    python corpus_analyze.py --min-sessions 3   # only values seen in 3+ sessions
-    python corpus_analyze.py --unknown-only     # INVARIANT values that don't match verify()
+    python evidence.corpus_analyze                    # stability analysis across all sessions
+    python evidence.corpus_analyze --min-sessions 3   # only values seen in 3+ sessions
+    python evidence.corpus_analyze --unknown-only     # INVARIANT values that don't match verify()
 
 Schema (JSONL, one entry per observation batch):
     {"session": "uuid", "ts": "ISO", "event": "begin_session", "pid": N}
@@ -36,7 +36,7 @@ if _here not in sys.path:
     sys.path.insert(0, _here)
 
 try:
-    from ground_truth import KNOWLEDGE_JSON
+    from evidence.target_config import KNOWLEDGE_JSON
     CORPUS_FILE = os.path.join(os.path.dirname(KNOWLEDGE_JSON), "re_corpus.jsonl")
 except Exception:
     CORPUS_FILE = os.path.join(_here, "re_corpus.jsonl")
