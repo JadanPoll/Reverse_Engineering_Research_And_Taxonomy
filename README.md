@@ -8,7 +8,7 @@
 
 | I want to… | Start with | Why |
 | --- | --- | --- |
-| See what an existing analysis knows, misses, or recommends next | `python analyze.py --status` / `python analyze.py --next 10` | Highest-level view of progress; requires prior artifacts for many functions |
+| See what an existing analysis knows, misses, or recommends next | `python cli.py status` / `python cli.py next 10` | Highest-level view of progress; requires prior artifacts for many functions |
 | Try the dynamic classifier on a particular binary/function | `python cli.py --help`; inspect `cli.py` examples | The current classifier's command entry point; execution is platform/dependency-specific |
 | Understand how machine-code structure is categorized | [TAXONOMY.md](TAXONOMY.md) | Function archetypes, graph motifs, limitations and investigation priorities |
 | Understand the P-Code experiments | [PCODE_PIPELINE.md](PCODE_PIPELINE.md) | Lifting, clustering and corpus-level analysis |
@@ -29,7 +29,7 @@ Run commands from the repo root. Some scripts assume Windows, Ghidra, preexistin
 
 ## Where the work lives
 
-- **Entry points:** [analyze.py](analyze.py) (analysis status and unknowns), [cli.py](cli.py) (dynamic classifier operations).
+- **Entry points:** [cli.py](cli.py) (primary operational entry point, including status/next/floors/holes and dynamic operations), [analyze.py](analyze.py) (compatibility wrapper for the analysis-orientation commands).
 - **Static investigation:** `ghidra_run.py`, `ghidra_dump_calltree.py`, `pcode_*.py`, `pe_utils.py`, `elf_reader.py` and `ar_reader.py`.
 - **Behavior and uncertainty:** [dynamic/](dynamic/) and `runtime_probe.py`; these are not all interchangeable implementations.
 - **Accumulated evidence:** `knowledge_bus.py`, `ground_truth.py`, [briefs/](briefs/), [TAXONOMY.md](TAXONOMY.md).
