@@ -8,11 +8,11 @@ to explore the binary efficiently with minimal inference hops.
 
 ```bash
 # 1. Run the full pipeline on current corpus
-py -3.13 pcode_extractor.py       # lift P-Code from all targets
-py -3.13 pcode_normalize.py       # level-1 normalization
-py -3.13 pcode_grammar.py --corpus pcode_corpus_norm.jsonl --out pcode_grammar_norm.npz
-py -3.13 pcode_cluster.py --grammar pcode_grammar_norm.npz
-py -3.13 pcode_wl.py              # call-graph WL kernel
+py -3.13 -m structural.pcode_extractor       # lift P-Code from all targets
+py -3.13 -m structural.pcode_normalize       # level-1 normalization
+py -3.13 -m structural.pcode_grammar --corpus pcode_corpus_norm.jsonl --out pcode_grammar_norm.npz
+py -3.13 -m structural.pcode_cluster --grammar pcode_grammar_norm.npz
+py -3.13 -m structural.pcode_wl              # call-graph WL kernel
 
 # 2. Generate a structural brief for any target
 py -3.13 generate_brief.py advapi32
