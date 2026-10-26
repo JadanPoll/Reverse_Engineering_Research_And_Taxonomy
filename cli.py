@@ -14,6 +14,7 @@ COMMANDS:
     extract-vas         Patch ground_truth.py VAs for all test dirs
     calibrate           Measure machine-specific thresholds → dynamic/calibration.json
     constants           Print all constants with category and provenance
+    capabilities        Rediscover capabilities by investigation goal
     status              Show overall analysis state
     next [N]            Show top N functions to investigate next
     floors              Show named analysis floors
@@ -44,6 +45,46 @@ import sys, os, argparse
 
 _here = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _here)
+
+
+# ── command: capabilities ─────────────────────────────────────────────────────
+
+_CAPABILITIES = [
+    ("orient", "What do we know, what is missing, and what should be investigated next?",
+     ["status", "next", "floors", "holes"]),
+    ("structural-map", "What kind of program structure is present, and where is the unusual code?",
+     ["generate_brief.py", "graph-metrics", "inspect-calltree"]),
+    ("function-behavior", "What does this specific function appear to do for concrete inputs?",
+     ["classify", "dynamic/nano_sim.py", "dynamic/slice_sim.py"]),
+    ("hidden-state", "Is behavior gated by globals, initialization, pointers, or indirect dispatch?",
+     ["memory-observe", "struct-recover", "vtable-resolve", "dynamic/global_sim.py", "dynamic/runtime_probe.py"]),
+    ("evidence", "How strong is the current claim and has independent evidence accumulated?",
+     ["kb", "health", "pipeline_audit.py", "knowledge_bus.py"]),
+    ("extract", "How do I produce the static artifacts needed by the structural pipeline?",
+     ["ghidra_run.py", "pcode_extractor.py", "pcode_normalize.py", "pcode_grammar.py", "pcode_cluster.py", "pcode_wl.py"]),
+]
+
+def cmd_capabilities(args):
+    """Externalized operational memory for humans and LLMs.
+
+    This is intentionally question-oriented rather than a flat command catalog.
+    Specialized mechanisms remain available, but callers should rediscover them
+    from the problem they are trying to solve instead of memorizing commands.
+    """
+    import json
+    rows = [
+        {"goal": goal, "use_when": use_when, "capabilities": capabilities}
+        for goal, use_when, capabilities in _CAPABILITIES
+    ]
+    if getattr(args, "json", False):
+        print(json.dumps({"principle": "choose by investigation goal; do not memorize the command set",
+                          "groups": rows}, indent=2))
+        return
+    print("CAPABILITY MAP — choose from the question, not from command memory\n")
+    for row in rows:
+        print(f"[{row['goal']}] {row['use_when']}")
+        print("  -> " + " | ".join(row["capabilities"]))
+    print("\nRule: escalate only when the cheaper capability cannot answer the question.")
 
 
 # ── command: sweep ─────────────────────────────────────────────────────────────
@@ -496,6 +537,11 @@ def main():
     )
     sub = ap.add_subparsers(dest="command", required=True)
 
+    # Externalized operational memory. This is the intended discovery surface;
+    # the long tail of precise commands should not need to be memorized.
+    p_caps = sub.add_parser("capabilities", help="Map investigation questions to available capabilities")
+    p_caps.add_argument("--json", action="store_true", help="Machine-readable capability map")
+
     # analysis orientation — implemented in analyze.py, exposed here so cli.py
     # remains the single discoverable toolkit entry point.
     sub.add_parser("status", help="Show overall analysis state")
@@ -609,6 +655,7 @@ def main():
         "inspect-calltree": lambda a: _cmd_inspect_calltree(a),
         "read-func":        lambda a: _cmd_read_func(a),
         "vtable-resolve":   lambda a: _cmd_vtable_resolve(a),
+        "capabilities":   cmd_capabilities,
         "status":         lambda _: __import__("analyze").cmd_status(),
         "next":           lambda a: __import__("analyze").cmd_next(a.n),
         "floors":         lambda _: __import__("analyze").cmd_floor(),
