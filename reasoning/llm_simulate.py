@@ -1,5 +1,5 @@
 """
-llm_simulate.py — Ask Claude to trace/simulate a decompiled function with
+reasoning.llm_simulate — Ask Claude to trace/simulate a decompiled function with
                   concrete input values, revealing branch decisions and routing.
 
 This is concrete tracing: the LLM reads pseudocode, substitutes provided
@@ -13,7 +13,7 @@ Useful for:
   - AES key derivation path tracing with known constants
 
 Usage:
-    python llm_simulate.py --va 0x181eXXXX
+    python -m reasoning.llm_simulate --va 0x181eXXXX
         [--calltree ghidra_calltree.json]
         [--names   ghidra_names.json]
         [--knowledge ghidra_knowledge.json]
@@ -25,13 +25,13 @@ Usage:
 
 Examples:
     # Trace device hash with known MachineGuid
-    python llm_simulate.py --va 0x181eXXXX \\
+    python -m reasoning.llm_simulate --va 0x181eXXXX \\
         --input  MachineGuid="{5156c52f-a042-47e5-98f0-33b04fcd81b2}" \\
         --callee BCryptHashData="hashes the input bytes into the active hash state" \\
         --goal   "does the result equal T1EE1D9C7D565CE72FA64F22E3FAB69FC?"
 
     # AES key path
-    python llm_simulate.py --va 0x181dXXXX \\
+    python -m reasoning.llm_simulate --va 0x181dXXXX \\
         --input  key_bytes="1047f11ba23da61fac378d04a226489e" \\
         --input  guid_bytes="5156c52fa04247e598f033b04fcd81b2" \\
         --goal   "what is KEY1?"
