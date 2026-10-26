@@ -58,21 +58,21 @@ import os, sys, json, argparse, re, time, datetime
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-# Paths come from ground_truth.py (H=1). Fall back to local directory if absent.
+# Paths come from evidence.target_config when configured. Fall back to repo-root artifacts.
 
-_here = os.path.dirname(os.path.abspath(__file__))
+_here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _here not in sys.path:
     sys.path.insert(0, _here)
 try:
     from evidence.target_config import (CALLTREE_JSON  as IN_DEFAULT,
                                NAMES_JSON     as NAMES_OUT,
                                KNOWLEDGE_JSON as KNOWLEDGE_OUT,
-                               TARGET_DLL     as HSS_DLL)
+                               TARGET_DLL     as TARGET_DLL_PATH)
 except ImportError:
     IN_DEFAULT    = os.path.join(_here, "ghidra_calltree.json")
     NAMES_OUT     = os.path.join(_here, "ghidra_names.json")
     KNOWLEDGE_OUT = os.path.join(_here, "ghidra_knowledge.json")
-    HSS_DLL       = ""
+    TARGET_DLL_PATH       = ""
 MODEL           = "claude-sonnet-4-6"
 MAX_CODE_CHARS  = 6000
 MAX_BATCH       = 4
@@ -541,7 +541,7 @@ def main():
     ap.add_argument("--input",      default=IN_DEFAULT,    help="Input calltree JSON")
     ap.add_argument("--output",     default=NAMES_OUT,     help="Output names JSON")
     ap.add_argument("--knowledge",  default=KNOWLEDGE_OUT, help="Knowledge base JSON")
-    ap.add_argument("--dll",        default=HSS_DLL,       help="DLL path for PE VA validation")
+    ap.add_argument("--dll",        default=TARGET_DLL_PATH,       help="DLL path for PE VA validation")
     ap.add_argument("--batch",      type=int, default=1,   help="Functions per LLM call")
     ap.add_argument("--tier",       type=int, default=1,   choices=[1,2],
                     help="Analysis tier: 1=naming+score, 2=+branch annotations")
