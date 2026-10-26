@@ -66,6 +66,8 @@ def cmd_investigation(args):
                 constraints=args.constraint or [],
             )
             print(investigation.summary(state))
+            if not state.get("stop_when"):
+                print("\n[warning] No stopping rule recorded; this does not block investigation.")
         elif action == "show":
             print(investigation.summary())
         elif action == "hypothesis":
@@ -74,7 +76,7 @@ def cmd_investigation(args):
             )
             print(f"{h['id']} recorded: {h['text']}")
         elif action == "hypothesis-status":
-            investigation.set_hypothesis_status(args.id, args.status)
+            investigation.set_hypothesis_status(args.id, args.status, reason=args.why or "")
             print(f"{args.id} -> {args.status}")
         elif action == "evidence":
             e = investigation.add_evidence(
@@ -229,16 +231,15 @@ def cmd_brief(args):
         return
 
     active_question = ""
-    if not args.label and not args.list:
-        try:
-            import investigation
-            state = investigation.load()
-            if state:
-                active_question = state.get("question", "")
-                if state.get("target"):
-                    args.label = state["target"]
-        except Exception:
-            pass
+    try:
+        import investigation
+        state = investigation.load()
+        if state:
+            active_question = state.get("question", "")
+            if not args.label and not args.list and state.get("target"):
+                args.label = state["target"]
+    except Exception:
+        pass
 
     if not args.label:
         labels = cached_labels
@@ -291,6 +292,10 @@ def cmd_brief(args):
             "next": "filter structural candidates by the active question, then descend only if more evidence could change the answer",
         }, indent=2))
     else:
+        if active_question:
+            print("## Active question")
+            print(active_question)
+            print()
         print(packet["overview"])
         print("\n## Bounded candidate option set")
         print(packet["routing_rule"])
@@ -823,6 +828,7 @@ def main():
     p_hs = inv.add_parser("hypothesis-status", help="Update a hypothesis after evidence")
     p_hs.add_argument("id")
     p_hs.add_argument("status", choices=["open", "supported", "weakened", "rejected"])
+    p_hs.add_argument("--why", default="", help="Why the belief changed")
 
     p_ev = inv.add_parser("evidence", help="Record an observation and what it bears on")
     p_ev.add_argument("observation")
