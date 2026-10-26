@@ -203,7 +203,7 @@ _CAPABILITIES = [
     ("hidden-state", "Is behavior gated by globals, initialization, pointers, or indirect dispatch?",
      ["memory-observe", "struct-recover", "vtable-resolve", "dynamic/global_sim.py", "dynamic/runtime_probe.py"]),
     ("evidence", "How strong is the current claim and has independent evidence accumulated?",
-     ["kb", "health", "pipeline_audit.py", "knowledge_bus.py"]),
+     ["kb", "health", "research.validation.pipeline_audit", "knowledge_bus.py"]),
     ("extract", "How do I refresh the structural evidence behind the briefs?",
      ["brief --rebuild-corpus", "ghidra_run.py"]),
 ]
