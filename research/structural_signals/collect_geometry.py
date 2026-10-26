@@ -16,7 +16,7 @@ from dynamic.execute import DLLExecutor
 from dynamic.struct_recover import ProgramGeometry, GeometryReport
 from dynamic.implication_graph import (ConstraintNode, build_implication_graph,
                                         extract_constraint_nodes)
-from pe_utils import PE
+from structural.pe_utils import PE
 
 sys.stdout.reconfigure(line_buffering=True)
 sys.stderr.reconfigure(line_buffering=True)
