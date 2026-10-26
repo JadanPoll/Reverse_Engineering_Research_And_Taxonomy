@@ -6,7 +6,7 @@ across multiple DLLs to check for compiler/ABI invariants.
 import json, ctypes, re, sys, time, math, os
 from dynamic.pcode_sym import PCODESymEx
 from dynamic.execute import DLLExecutor
-from pe_utils import PE
+from structural.pe_utils import PE
 from collections import defaultdict, Counter
 
 sys.stdout.reconfigure(line_buffering=True)
