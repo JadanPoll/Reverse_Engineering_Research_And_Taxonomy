@@ -1,5 +1,5 @@
 """
-corpus_analyze.py — Post-hoc stability analysis of the RE observation corpus.
+evidence/corpus_analyze.py — Post-hoc stability analysis of the RE observation corpus.
 
 This is where the 1/50 rare insight becomes visible.
 
@@ -34,7 +34,7 @@ if _here not in sys.path:
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 try:
-    from ground_truth import verify, KNOWLEDGE_JSON
+    from evidence.target_config import verify, KNOWLEDGE_JSON
     CORPUS_FILE = os.path.join(os.path.dirname(KNOWLEDGE_JSON), "re_corpus.jsonl")
     _HAS_VERIFY = True
 except Exception:
