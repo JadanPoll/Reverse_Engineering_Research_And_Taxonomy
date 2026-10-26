@@ -145,7 +145,7 @@ def _compact_brief(markdown, max_functions=5):
     explore = section("#### Large Novel Functions", "#### Smaller Novel Functions")
     rows = []
     for line in explore.splitlines():
-        if line.startswith("| \`"):
+        if line.startswith("| `"):
             rows.append(line)
         if len(rows) >= max_functions:
             break
