@@ -25,7 +25,7 @@ CRITICAL DISTINCTIONS (common LLM mistakes):
     sweep uses --n-args 0 by default; classify uses --args 1 by default
 
     classify.run() takes executor=DLLExecutor(...), NOT dll_path=
-    KNOWN_VAS in ground_truth.py are for the DEBUG dll, not _stripped.dll
+    KNOWN_VAS in target-specific test ground_truth.py are for the DEBUG dll, not _stripped.dll
 
 EXAMPLES:
     py -3.13 cli.py capabilities
@@ -322,7 +322,7 @@ _CAPABILITIES = [
     ("hidden-state", "Is behavior gated by globals, initialization, pointers, or indirect dispatch?",
      ["memory-observe", "struct-recover", "vtable-resolve", "dynamic/global_sim.py", "dynamic/runtime_probe.py"]),
     ("evidence", "How strong is the current claim and has independent evidence accumulated?",
-     ["kb", "health", "research.validation.pipeline_audit", "knowledge_bus.py"]),
+     ["kb", "health", "research.validation.pipeline_audit", "evidence.knowledge_bus"]),
     ("extract", "How do I refresh the structural evidence behind the briefs?",
      ["brief --rebuild-corpus", "ghidra_run.py"]),
 ]
@@ -427,10 +427,10 @@ def cmd_classify(args):
 
 _VERIFY_MODULES = {
     "classify":      ("dynamic.classify",  "_verify"),
-    "knowledge_bus": ("knowledge_bus",     "_verify"),
+    "knowledge_bus": ("evidence.knowledge_bus", "_verify"),
     "fingerprint":   ("dynamic.fingerprint", "_verify"),
     "execute":       ("dynamic.execute",   None),   # no _verify yet
-    "pe_utils":      ("pe_utils",          "_verify"),
+    "pe_utils":      ("structural.pe_utils", "_verify"),
     "probe":         ("dynamic.probe",     None),
 }
 
@@ -468,7 +468,7 @@ def cmd_verify(args):
 # ── command: kb ────────────────────────────────────────────────────────────────
 
 def cmd_kb(args):
-    from knowledge_bus import get_verify_hits, get_observations, _load
+    from evidence.knowledge_bus import get_verify_hits, get_observations, _load
     data = _load()
     hits = get_verify_hits(min_stability="EPHEMERAL")
     obs  = get_observations(min_stability="EPHEMERAL")
@@ -872,7 +872,7 @@ def main():
     p_mo.add_argument("dll",  help="Path to DLL")
     p_mo.add_argument("func", help="Export name or 0xVA")
     p_mo.add_argument("--n",   type=int, default=10, help="Number of calls (default 10)")
-    p_mo.add_argument("--emit", action="store_true", help="Emit invariants to knowledge_bus")
+    p_mo.add_argument("--emit", action="store_true", help="Emit invariants to the evidence bus")
 
     # sweep
     p_sweep = sub.add_parser("sweep", help="Classify all stripped test DLLs")
@@ -1001,7 +1001,7 @@ def _cmd_struct_recover(args):
     from dynamic.pcode_sym import PCODESymEx
     from dynamic.execute import DLLExecutor
     from dynamic.struct_recover import ProgramGeometry, print_report
-    from pe_utils import PE
+    from structural.pe_utils import PE
     import json
 
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
