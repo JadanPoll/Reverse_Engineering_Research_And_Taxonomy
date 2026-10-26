@@ -28,7 +28,7 @@ from dataclasses import dataclass, asdict
 
 # make pe_utils importable regardless of cwd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pe_utils import PE
+from structural.pe_utils import PE
 
 
 # ── Windows VirtualAlloc / guard-page setup ───────────────────────────────────
