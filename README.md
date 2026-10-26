@@ -6,21 +6,20 @@
 
 ## Start here
 
-Do **not** try to memorize the toolkit's command set. Start from the investigation:
+Do **not** try to memorize the toolkit's command set. Frame the investigation, then ask for the bounded context packet:
 
 ```
 python cli.py investigation new "How does this program dispatch work?" --target mgba \
   --stop "the dispatch mechanism is supported by discriminating evidence"
-python cli.py status
-python cli.py capabilities
-python cli.py brief
+python cli.py context
 ```
 
-The local investigation state stores only what should change future decisions: active question, parent goal, hypotheses, evidence, consequential uncertainties, next action and stopping rule. It does **not** duplicate calltrees, P-Code, pseudocode or briefs. `capabilities` maps questions to the long tail of precise mechanisms when needed.
+`context` is the preferred LLM entry point. It combines only the state that should change the next reasoning step: active question and parent goal, live hypotheses and recent evidence, consequential uncertainties, stopping condition, a small cross-cost structural option set, and the available escalation families. Rich calltrees, P-Code, pseudocode and full briefs remain underneath for selective descent.
 
 | I want to… | Start with | Why |
 | --- | --- | --- |
-| Preserve the active question, hypotheses and stopping rule | `python cli.py investigation` / `python cli.py status` | Keeps the investigation question-relative across tools and sessions |
+| Give an LLM the smallest sufficient investigation context | `python cli.py context` / `--json` | Combines question, hypotheses, recent evidence, stopping rule and bounded structural options without flooding context |
+| Preserve or update the active question, hypotheses and stopping rule | `python cli.py investigation` / `python cli.py status` | Keeps the investigation question-relative across tools and sessions |
 | Try the dynamic classifier on a particular binary/function | `python cli.py --help`; inspect `cli.py` examples | The current classifier's command entry point; execution is platform/dependency-specific |
 | Get the compact structural map for an analyzed binary | `python cli.py brief [label]` | Bounded LLM packet: overview, structurally novel candidates, interpretation and an explicit coverage boundary; inherits the active target when possible |
 | Understand how machine-code structure is categorized | [TAXONOMY.md](TAXONOMY.md) | Function archetypes, graph motifs, limitations and investigation priorities |
@@ -37,7 +36,7 @@ Run commands from the repo root. Some scripts assume Windows, Ghidra, preexistin
 3. **Choose by expected value.** Filter structural candidates through the active question. Prefer evidence that most cheaply separates live hypotheses rather than accumulating observations indiscriminately.
 4. **Escalate adaptively.** Move from static evidence to targeted classification/simulation, state recovery, memory or runtime observation only when the cheaper layer cannot resolve a consequential uncertainty.
 5. **Update beliefs explicitly.** Record observations separately from interpretations; mark hypotheses supported, weakened or rejected rather than silently replacing them.
-6. **Stop and explain.** Stop when the intended decision/understanding is supported well enough, competing hypotheses are practically equivalent, or the next experiment is not worth its cost. Preserve residual uncertainty and reopening conditions.
+6. **Stop and explain.** Stop when the intended decision/understanding is supported well enough, competing hypotheses are practically equivalent, or the next experiment is not worth its cost. Preserve residual uncertainty and state what new evidence or change would justify reopening the branch.
 
 **Stopping rule:** stop investigating when the question is answered to an appropriate confidence level, the next experiment is not worth its cost, or an explicit blocker has been reached. A comprehensively classified binary is not automatically an educational success.
 
