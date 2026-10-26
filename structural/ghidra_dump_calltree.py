@@ -3,16 +3,16 @@
 # @description
 #   Starting from seed virtual addresses (or xrefs to known string addresses),
 #   walks the call graph to depth N, decompiles every function, and writes a
-#   JSON file ready for llm_name_functions.py.
+#   JSON file ready for the semantic reasoning layer.
 #
 #   Seeds and output path are read from ground_truth.py (in the same folder).
 #   This script contains NO target-specific constants — edit ground_truth.py.
 #
 # Usage (pyghidra headless):
-#   py -3.13 hss_toolkit/ghidra_run.py --calltree
+#   python -m structural.ghidra_run --calltree
 #   or call main() directly from a running Ghidra session
 #
-# Config overrides (env vars take precedence over ground_truth.py):
+# Config overrides (env vars take precedence over evidence.target_config):
 #   GHIDRA_SEEDS  = comma-separated hex VAs of seed functions
 #   GHIDRA_DEPTH  = integer max depth (default 4)
 #   GHIDRA_OUT    = output JSON path
@@ -29,30 +29,31 @@ from ghidra.program.model.symbol import SourceType
 # Import is best-effort: if it fails, env vars or manual editing are the fallback.
 
 _here = os.path.dirname(os.path.abspath(__file__)) if "__file__" in dir() else os.getcwd()
-if _here not in sys.path:
-    sys.path.insert(0, _here)
+_root = os.path.dirname(_here)
+if _root not in sys.path:
+    sys.path.insert(0, _root)
 
 try:
     from evidence.target_config import KNOWN_VAS, KNOWN_STRINGS, CALLTREE_JSON
     FUNCTION_SEEDS_DEFAULT = list(KNOWN_VAS.values())
     STRING_SEEDS_DEFAULT   = list(KNOWN_STRINGS.keys())
     OUT_DEFAULT            = CALLTREE_JSON
-    print("Config: loaded seeds from ground_truth.py")
+    print("Config: loaded seeds from evidence.target_config")
 except Exception as _e:
-    # Fallback: no seeds. Set GHIDRA_SEEDS env var or edit ground_truth.py.
-    print(f"Config: ground_truth.py not loaded ({_e}) -- set GHIDRA_SEEDS env var")
+    # Fallback: no seeds. Set GHIDRA_SEEDS or configure evidence.target_config.
+    print(f"Config: evidence.target_config not loaded ({_e}) -- set GHIDRA_SEEDS if needed")
     FUNCTION_SEEDS_DEFAULT = []
     STRING_SEEDS_DEFAULT   = []
-    OUT_DEFAULT = os.path.join(_here, "ghidra_calltree.json")
+    OUT_DEFAULT = os.path.join(_root, "ghidra_calltree.json")
 
 MAX_DEPTH_DEFAULT = 4
 
 # ── Seed strategy ─────────────────────────────────────────────────────────────
 #
-# FUNCTION_SEEDS: direct function entry-point VAs (from ground_truth.KNOWN_VAS).
+# FUNCTION_SEEDS: direct function entry-point VAs (from evidence.target_config.KNOWN_VAS).
 #   Always reliable. Tried FIRST.
 #
-# STRING_SEEDS: data-section VAs of string literals (from ground_truth.KNOWN_STRINGS).
+# STRING_SEEDS: data-section VAs of string literals (from evidence.target_config.KNOWN_STRINGS).
 #   Resolved via Ghidra xref manager. Unreliable in headless mode (x86 Constant
 #   Reference Analyzer often skips data refs). Named floor: XREF_HEADLESS_GAP.
 #
@@ -596,7 +597,7 @@ _FIELD_MAP_CACHE = None   # lazy; None = not yet loaded
 
 def _load_field_map() -> dict:
     """
-    Load confirmed offset→name mappings from knowledge_bus (min_stability=COMMON).
+    Load confirmed offset→name mappings from evidence bus (min_stability=COMMON).
     Returns a merged flat dict {offset_hex: field_name} across all structs.
     When the same offset is claimed by two different structs, that offset is
     dropped (ambiguous) rather than annotating with the wrong name.
@@ -605,7 +606,7 @@ def _load_field_map() -> dict:
     if _FIELD_MAP_CACHE is not None:
         return _FIELD_MAP_CACHE
     try:
-        from evidence.knowledge_bus import get_field_map
+        from evidence.evidence bus import get_field_map
         all_maps = get_field_map(min_stability="EPHEMERAL")
         merged: dict = {}
         conflicts: set = set()
@@ -620,11 +621,11 @@ def _load_field_map() -> dict:
                     merged[off_hex] = fname
         _FIELD_MAP_CACHE = merged
         if merged:
-            print(f"  [FIELDS] Loaded {len(merged)} confirmed field offset(s) from knowledge_bus: "
+            print(f"  [FIELDS] Loaded {len(merged)} confirmed field offset(s) from evidence bus: "
                   + ", ".join(f"{k}→{v}" for k, v in sorted(merged.items())))
     except Exception as _fe:
         _FIELD_MAP_CACHE = {}
-        print(f"  [FIELDS] knowledge_bus not available ({_fe}), skipping field annotations")
+        print(f"  [FIELDS] evidence bus not available ({_fe}), skipping field annotations")
     return _FIELD_MAP_CACHE
 
 
@@ -632,7 +633,7 @@ _MEMORY_STATE_CACHE = None   # lazy; None = not yet loaded
 
 def _load_memory_state_map() -> dict:
     """
-    Load confirmed memory state transitions from knowledge_bus.
+    Load confirmed memory state transitions from evidence bus.
     Returns {ghidra_va_hex: {before_hex: after_hex, 'label': 'section+offset'}}
     Only includes observations with min_stability=COMMON.
 
@@ -645,7 +646,7 @@ def _load_memory_state_map() -> dict:
         return _MEMORY_STATE_CACHE
     _MEMORY_STATE_CACHE = {}
     try:
-        from evidence.knowledge_bus import get_observations
+        from evidence.evidence bus import get_observations
         obs = get_observations(obs_type="memory_state_change", min_stability="COMMON")
         for o in obs:
             p   = o["payload"]
@@ -670,7 +671,7 @@ def _load_memory_state_map() -> dict:
 def annotate_memory_state(func, pcode: str) -> str:
     """
     GAP: GLOBAL_STATE_NOT_SURFACED.
-    When the knowledge_bus has confirmed memory_state_change observations for
+    When the evidence bus has confirmed memory_state_change observations for
     functions in this calltree, prepend a TOOLKIT_NOTE listing which globals
     change and what values they transition through.
 
@@ -1188,7 +1189,7 @@ def walk_tree(seed_funcs, max_depth):
             pcode = annotate_win32_constants(pcode)
             # GAP: warn about missing variadic args (printf/wsprintf family)
             pcode = annotate_variadic_format(pcode)
-            # GAP: cross-function field names from knowledge_bus
+            # GAP: cross-function field names from evidence bus
             pcode = annotate_field_accesses(pcode)
             # GAP: confirmed global state mutations from dynamic memory observer
             pcode = annotate_memory_state(func, pcode)
@@ -1322,7 +1323,7 @@ def main():
             print(f"  Found {len(seed_funcs)} exported/defined function(s) as fallback seeds.")
         else:
             print("\nERROR: No seed functions resolved and no exports found.")
-            print("Add known function VAs to ground_truth.KNOWN_VAS or set GHIDRA_SEEDS env var.")
+            print("Add known function VAs to evidence.target_config.KNOWN_VAS or set GHIDRA_SEEDS env var.")
             return
 
     print(f"\n{len(seed_funcs)} seed function(s).  Walking to depth {max_depth}...\n")
