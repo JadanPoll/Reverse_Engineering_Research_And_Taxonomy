@@ -2,7 +2,7 @@
 re_toolkit/cli.py — Single entry point for all toolkit operations.
 
 USAGE:
-    py -3.13 cli.py <command> [args]
+    py -3.13 cli.py [command] [args]
 
 COMMANDS:
     investigation       Show/update the active question, hypotheses, evidence, and stop rule
@@ -890,7 +890,7 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    sub = ap.add_subparsers(dest="command", required=True)
+    sub = ap.add_subparsers(dest="command")
 
     # Question-relative investigation state. One discoverable surface; subactions
     # preserve hypotheses/evidence/stop conditions without making the LLM remember files.
@@ -1063,6 +1063,13 @@ def main():
     p_sr.add_argument("--verbose", action="store_true")
 
     args = ap.parse_args()
+    if args.command is None:
+        args.json = False
+        args.targets = 4
+        args.evidence = 8
+        cmd_context(args)
+        return
+
     {
         "graph-metrics":    lambda a: _cmd_graph_metrics(a),
         "struct-recover":   lambda a: _cmd_struct_recover(a),
