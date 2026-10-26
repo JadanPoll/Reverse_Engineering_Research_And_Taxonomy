@@ -170,7 +170,7 @@ if _here not in _sys.path:
     _sys.path.insert(0, _here)
 
 try:
-    from ground_truth import verify
+    from evidence.target_config import verify
     _HAS_VERIFY = True
 except Exception:
     try:
@@ -184,14 +184,14 @@ except Exception:
         _HAS_VERIFY = False
 
 try:
-    from knowledge_bus import emit_verify_hit as _kb_emit_verify_hit
+    from evidence.knowledge_bus import emit_verify_hit as _kb_emit_verify_hit
     _HAS_KB = True
 except Exception:
     _HAS_KB = False
     def _kb_emit_verify_hit(*a, **kw): pass
 
 try:
-    from corpus_logger import (log_observation  as _corpus_log_obs,
+    from evidence.corpus_logger import (log_observation  as _corpus_log_obs,
                                 log_verify_hit   as _corpus_log_hit,
                                 begin_session    as _corpus_begin,
                                 end_session      as _corpus_end)
