@@ -94,7 +94,11 @@ def cmd_investigation(args):
             investigation.set_next(args.action, why=args.why or "")
             print("Next action recorded.")
         elif action == "close":
-            investigation.close(args.result, residual_uncertainty=args.residual or "")
+            investigation.close(
+                args.result,
+                residual_uncertainty=args.residual or "",
+                reopen_when=args.reopen or "",
+            )
             print(investigation.summary())
     except ValueError as e:
         print(f"INVESTIGATION_STATE_ERROR: {e}", file=sys.stderr)
@@ -929,6 +933,7 @@ def main():
     p_close = inv.add_parser("close", help="Close when the stopping rule has been met")
     p_close.add_argument("result")
     p_close.add_argument("--residual", default="")
+    p_close.add_argument("--reopen", default="", help="Evidence/change that would justify reopening")
 
     # Bounded reasoning packet: preferred LLM entry point after framing.
     p_ctx = sub.add_parser("context", help="Produce bounded question-relative context for LLM reasoning")
