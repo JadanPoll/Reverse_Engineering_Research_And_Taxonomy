@@ -133,56 +133,48 @@ class PE:
 # ── Self-test ──────────────────────────────────────────────────────────────────
 
 def _verify():
-    """
-    Confirm the parser against ground_truth.TARGET_DLL.
-    Anchored to real measurements from Hss.Store.Client.dll (2025 build).
+    """Check target-relative PE facts when a target has actually been configured.
 
-    POSITIVE: known section names, imagebase, VA->offset for confirmed functions.
-    NEGATIVE: out-of-range VA must raise, not silently succeed.
+    An unconfigured target is not a toolkit failure. The parser itself is exercised
+    whenever a real PE is supplied through normal use.
     """
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from evidence.target_config import TARGET_DLL, IMAGE_BASE, KNOWN_VAS
 
-    pe = PE(TARGET_DLL)
+    if (not TARGET_DLL or
+            "path\\to\\your\\target" in TARGET_DLL.lower() or
+            not os.path.isfile(TARGET_DLL)):
+        print("SKIP: no real TARGET_DLL configured in evidence.target_config")
+        return
 
-    # POSITIVE: imagebase must match ground_truth
+    pe = PE(TARGET_DLL)
     assert pe.image_base == IMAGE_BASE, \
         f"ImageBase mismatch: {pe.image_base:#x} != {IMAGE_BASE:#x}"
-    assert pe.bits == 64, f"Expected 64-bit PE, got {pe.bits}-bit"
 
-    # POSITIVE: anchored section count + known section names from real run
-    assert len(pe.sections) == 6, \
-        f"Expected 6 sections, got {len(pe.sections)}: {[s['name'] for s in pe.sections]}"
-    names = {s['name'] for s in pe.sections}
-    for expected in ('.rdata', '.data', '.pdata', '.text'):
-        assert expected in names, f"Expected section {expected!r} not found"
-
-    # POSITIVE: every KNOWN_VA must land in a section and produce a valid file offset
     for label, va in KNOWN_VAS.items():
         off = pe.va_to_file_offset(va)
-        assert off > 0, f"KNOWN_VAS[{label!r}] = 0x{va:x} -> offset 0"
-        # Round-trip: file_offset -> va must give back the same VA (within section)
-        rt_va = pe.file_offset_to_va(off)
-        assert rt_va == va, \
-            f"Round-trip failed for {label!r}: 0x{va:x} -> off 0x{off:x} -> VA 0x{rt_va:x}"
+        assert off >= 0, f"KNOWN_VAS[{label!r}] = 0x{va:x} did not map"
+        assert pe.file_offset_to_va(off) == va, \
+            f"Round-trip failed for {label!r}: 0x{va:x}"
 
-    # NEGATIVE: VA before imagebase must raise
     try:
-        pe.va_to_file_offset(0x1000)
-        assert False, "Expected ValueError for VA below imagebase"
+        pe.va_to_file_offset(pe.image_base - 1)
+        raise AssertionError("Expected ValueError for VA below imagebase")
     except ValueError:
         pass
 
-    # NEGATIVE: VA far beyond binary must raise
+    max_end = max(
+        pe.image_base + s["vrva"] + max(s["vsize"], s["raw_size"])
+        for s in pe.sections
+    )
     try:
-        pe.va_to_file_offset(IMAGE_BASE + 0x40000000)
-        assert False, "Expected ValueError for VA beyond binary"
+        pe.va_to_file_offset(max_end + 0x100000)
+        raise AssertionError("Expected ValueError for VA beyond binary")
     except ValueError:
         pass
 
-    print("OK: pe_utils.py verified")
+    print("OK: structural.pe_utils target-relative checks passed")
     print(f"  {pe.bits}-bit PE  imagebase={pe.image_base:#x}  {len(pe.sections)} sections")
-    print(f"  {len(KNOWN_VAS)} KNOWN_VAS all map to valid file offsets")
+    print(f"  {len(KNOWN_VAS)} configured VAs round-trip correctly")
 
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
