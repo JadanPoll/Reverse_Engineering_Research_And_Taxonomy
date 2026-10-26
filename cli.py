@@ -117,43 +117,56 @@ def cmd_brief(args):
         _run_stage("pcode_cluster.py")
         _run_stage("pcode_wl.py")
 
+    out_dir = os.path.join(_here, "briefs")
+    os.makedirs(out_dir, exist_ok=True)
+    cached_labels = sorted(
+        os.path.splitext(name)[0]
+        for name in os.listdir(out_dir)
+        if name.endswith(".md")
+    )
     missing = [p for p in required if not os.path.exists(os.path.join(_here, p))]
-    if missing:
-        print("STRUCTURAL_ARTIFACTS_MISSING", file=sys.stderr)
-        for p in missing:
-            print(f"  - {p}", file=sys.stderr)
-        print(
-            "Run 'python cli.py brief <label> --rebuild-corpus' when source targets are available.",
-            file=sys.stderr,
-        )
-        raise SystemExit(2)
 
-    import generate_brief
-    data = generate_brief.load_data()
-    labels = sorted(set(data["dll_labels"]))
-
-    if args.list:
-        for label in labels:
+    if args.list and missing:
+        for label in cached_labels:
             print(label)
         return
 
     if not args.label:
+        labels = cached_labels
+        if not missing:
+            import generate_brief
+            labels = sorted(set(generate_brief.load_data()["dll_labels"]))
         print("A binary label is required. Available labels:", file=sys.stderr)
         for label in labels:
             print(f"  {label}", file=sys.stderr)
         raise SystemExit(2)
 
-    if args.label not in labels:
-        print(f"UNKNOWN_BINARY_LABEL: {args.label}", file=sys.stderr)
-        print("Use 'python cli.py brief --list'.", file=sys.stderr)
-        raise SystemExit(2)
-
-    full = generate_brief.generate_brief(args.label, data)
-    out_dir = os.path.join(_here, "briefs")
-    os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, f"{args.label}.md")
-    with open(out_path, "w", encoding="utf-8") as out:
-        out.write(full)
+
+    # Cached brief = compact, reviewable derived artifact. The expensive corpus is
+    # only required to regenerate it, analogous to PDFlets retaining evidence-linked
+    # projections without forcing the entire source substrate into every context.
+    if missing and not args.rebuild_corpus:
+        if not os.path.exists(out_path):
+            print(f"UNKNOWN_BINARY_LABEL: {args.label}", file=sys.stderr)
+            print("Use 'python cli.py brief --list'.", file=sys.stderr)
+            raise SystemExit(2)
+        with open(out_path, encoding="utf-8") as src:
+            full = src.read()
+    else:
+        import generate_brief
+        data = generate_brief.load_data()
+        labels = sorted(set(data["dll_labels"]))
+        if args.list:
+            for label in labels:
+                print(label)
+            return
+        if args.label not in labels:
+            print(f"UNKNOWN_BINARY_LABEL: {args.label}", file=sys.stderr)
+            raise SystemExit(2)
+        full = generate_brief.generate_brief(args.label, data)
+        with open(out_path, "w", encoding="utf-8") as out:
+            out.write(full)
 
     packet = _compact_brief(full, max_functions=args.targets)
     brief_path = os.path.relpath(out_path, _here).replace("\\", "/")
