@@ -26,16 +26,16 @@
 | ARITHMETIC | 58 | 4.3% | Integer computation without significant memory access. Pure algorithm. |
 | WRITER | 30 | 2.2% | Writes struct/array fields. Combined with READER: identifies mutable state. |
 
-## LLM Exploration Priority
+## Structural Novelty and Expected Investigation Cost
 
-Functions ordered by grammar coverage (0.0 = matches no known pattern = explore first).
-High coverage = predictable, classify cheaply. Low coverage = novel, spend LLM budget here.
+Functions ordered by grammar coverage (0.0 = matches no known pattern = structurally unusual).
+High coverage = structurally predictable and usually cheaper to understand; it does **not** mean semantically unimportant. Low coverage = structurally novel and usually deserves more LLM budget when relevant to the active question.
 
-### Explore First (coverage ≤ 0.15 — structurally novel domain logic)
+### Structurally Novel Candidates (coverage ≤ 0.15)
 
-#### Orchestrators / Controllers (large novel functions — explore these first)
+#### Large Novel Functions (possible orchestrators/controllers)
 
-*Large + low coverage = complex unique logic. These likely control subsystems.*
+*Large + low coverage suggests expensive, unusual logic. Treat these as candidate investigation targets only when they are relevant to the active question.*
 
 | Function | Archetype | Coverage | Size (bytes) |
 |---|---|---|---|
@@ -51,7 +51,7 @@ High coverage = predictable, classify cheaply. Low coverage = novel, spend LLM b
 | `sqlite3FindTable` | GUARD_SIMPLE | 0.147 | 606 |
 | *(+2 more large functions)* | | | |
 
-#### Specific Implementations (smaller novel functions)
+#### Smaller Novel Functions
 
 | Function | Archetype | Coverage | Size (bytes) |
 |---|---|---|---|
@@ -77,7 +77,7 @@ High coverage = predictable, classify cheaply. Low coverage = novel, spend LLM b
 | `sqlite3GetTempRange` | GUARD_SIMPLE | 0.010 | 53 |
 | *(+604 more)* | | | |
 
-### Infrastructure Functions (low coverage but likely utility — lower priority)
+### Likely Infrastructure Despite Low Coverage
 
 *Hypothesis: CALLER/REGISTER_HEAVY + size < 48 bytes + utility name = wrapper.*
 *The function body is trivial — but functions with many callers (★) are structural hubs.*
@@ -102,7 +102,7 @@ High coverage = predictable, classify cheaply. Low coverage = novel, spend LLM b
 | `sqlite3ValueSetNull` | CALLER | 0.003 | 0 |
 | *(+119 more)* | | | |
 
-### Classify Cheaply (coverage ≥ 0.60 — highly predictable)
+### Structurally Predictable (coverage ≥ 0.60 — usually cheaper to understand)
 
 | Function | Archetype | Coverage |
 |---|---|---|
