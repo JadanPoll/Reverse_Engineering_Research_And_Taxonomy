@@ -48,6 +48,77 @@ _here = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _here)
 
 
+# ── command: investigation ────────────────────────────────────────────────────
+
+def cmd_investigation(args):
+    """Manage only the compact state that should affect future reasoning."""
+    import investigation
+    action = args.investigation_action or "show"
+    try:
+        if action == "new":
+            state = investigation.new(
+                args.question,
+                target=args.target or "",
+                parent_goal=args.goal or "",
+                decision_or_understanding=args.decision or "",
+                stop_when=args.stop or "",
+                constraints=args.constraint or [],
+            )
+            print(investigation.summary(state))
+        elif action == "show":
+            print(investigation.summary())
+        elif action == "hypothesis":
+            h = investigation.add_hypothesis(
+                args.text, prior=args.prior, why_prior=args.why_prior or ""
+            )
+            print(f"{h['id']} recorded: {h['text']}")
+        elif action == "hypothesis-status":
+            investigation.set_hypothesis_status(args.id, args.status)
+            print(f"{args.id} -> {args.status}")
+        elif action == "evidence":
+            e = investigation.add_evidence(
+                args.observation,
+                source=args.source or "",
+                supports=args.supports or [],
+                contradicts=args.contradicts or [],
+            )
+            print(f"{e['id']} recorded")
+        elif action == "uncertainty":
+            investigation.add_uncertainty(args.text)
+            print("Uncertainty recorded.")
+        elif action == "next":
+            investigation.set_next(args.action, why=args.why or "")
+            print("Next action recorded.")
+        elif action == "close":
+            investigation.close(args.result, residual_uncertainty=args.residual or "")
+            print(investigation.summary())
+    except ValueError as e:
+        print(f"INVESTIGATION_STATE_ERROR: {e}", file=sys.stderr)
+        raise SystemExit(2)
+
+
+def cmd_status(args):
+    """High-level status: current question first, machinery second."""
+    import investigation
+    state = investigation.load()
+    print(investigation.summary(state))
+    briefs_dir = os.path.join(_here, "briefs")
+    cached = sorted(
+        os.path.splitext(name)[0]
+        for name in os.listdir(briefs_dir)
+        if name.endswith(".md")
+    ) if os.path.isdir(briefs_dir) else []
+    print(f"\nStructural briefs available: {len(cached)}")
+    if state and state.get("target"):
+        label = state["target"]
+        path = os.path.join(briefs_dir, f"{label}.md")
+        if os.path.exists(path):
+            print(f"Active target brief: briefs/{label}.md")
+            print("Use cli.py brief to get the bounded packet for this investigation.")
+        else:
+            print(f"Active target has no cached structural brief: {label}")
+
+
 # ── command: brief ────────────────────────────────────────────────────────────
 
 def _run_stage(module, *extra):
