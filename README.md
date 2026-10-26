@@ -1,16 +1,50 @@
-## Reverse_Engineering_Research_And_Taxonomy
+# Reverse Engineering Research & Taxonomy
 
-### Introduction
-Design Hypothesis: One can, in conjunction with LLMs, effeciently create a high quality "textbook" on a compiled program through reverse engineering.
+**Goal:** learn how unfamiliar *real compiled programs* work, and turn the investigation into reusable, evidence-backed explanations. This is a research/education experiment, **not** a polished or autonomous reverse-engineering assistant.
 
+**Status:** experimental. Different scripts belong to different investigations; do not assume the whole repository is one working pipeline. Findings and heuristics are hypotheses until independently checked.
 
-Statistical and spectral methods...
-Human design sensibilites even in machine code.
-PCode lifting, custom set lifting.
-### Project Motivations
+## Start here
 
+| I want to… | Start with | Why |
+| --- | --- | --- |
+| See what an existing analysis knows, misses, or recommends next | `python analyze.py --status` / `python analyze.py --next 10` | Highest-level view of progress; requires prior artifacts for many functions |
+| Try the dynamic classifier on a particular binary/function | `python cli.py --help`; inspect `cli.py` examples | The current classifier's command entry point; execution is platform/dependency-specific |
+| Understand how machine-code structure is categorized | [TAXONOMY.md](TAXONOMY.md) | Function archetypes, graph motifs, limitations and investigation priorities |
+| Understand the P-Code experiments | [PCODE_PIPELINE.md](PCODE_PIPELINE.md) | Lifting, clustering and corpus-level analysis |
+| Investigate *stripped* binaries where names are not available | [STRIPPED_ANALYSIS_DESIGN.md](STRIPPED_ANALYSIS_DESIGN.md) | Hypotheses and proposed research, **not** a guaranteed implemented workflow |
+| Browse accumulated binary-specific explanations | [briefs/](briefs/) | Per-target research briefs, not interchangeable proof of behavioral correctness |
 
-### Learnings, Successes etc.
+Run commands from the repo root. Some scripts assume Windows, Ghidra, preexisting artifacts, binaries, configured paths, or other external dependencies. A missing prerequisite is **not** evidence that the technique itself failed. Read the command's header and explicit errors before proceeding. Never execute an unknown binary outside an appropriately isolated environment.
 
+## How to investigate a binary
 
-### Continuations, if i get the credits
+1. **Ask a question.** Examples: “What subsystem handles input?”, “How does dispatch work?”, “Where does state persist?”, “What changes if this input is altered?” Define the desired explanation before choosing machinery.
+2. **Collect the cheapest discriminating evidence.** Start with format/imports/strings, P-Code structure, function clusters and call relationships. Use [TAXONOMY.md](TAXONOMY.md) to avoid spending analysis budget on boilerplate.
+3. **Form competing interpretations.** Separate raw observations from hypotheses. Prefer an inexpensive test that distinguishes explanations over reading every function.
+4. **Escalate only when necessary.** Use relevant `dynamic/` probing, `runtime_probe.py`, or memory observation for hypotheses that static evidence cannot settle. A structural similarity is not behavioral equivalence.
+5. **Record what was learned.** A useful explanation says what the program appears to do, the concrete evidence, what alternatives were rejected, what remains unresolved, and the next cheapest useful question. Reuse an existing brief where appropriate; no compulsory reporting format.
+
+**Stopping rule:** stop investigating when the question is answered to an appropriate confidence level, the next experiment is not worth its cost, or an explicit blocker has been reached. A comprehensively classified binary is not automatically an educational success.
+
+## Where the work lives
+
+- **Entry points:** [analyze.py](analyze.py) (analysis status and unknowns), [cli.py](cli.py) (dynamic classifier operations).
+- **Static investigation:** `ghidra_run.py`, `ghidra_dump_calltree.py`, `pcode_*.py`, `pe_utils.py`, `elf_reader.py` and `ar_reader.py`.
+- **Behavior and uncertainty:** [dynamic/](dynamic/) and `runtime_probe.py`; these are not all interchangeable implementations.
+- **Accumulated evidence:** `knowledge_bus.py`, `ground_truth.py`, [briefs/](briefs/), [TAXONOMY.md](TAXONOMY.md).
+- **Corpus experiments:** `corpus_*.py`, `collect_geometry.py`, `*_survey.py`, `spectral_*.py`, and related experimental scripts.
+- **Exploratory scratch scripts:** root files beginning `_`. Preserve for reproducibility when useful; they are **not** recommended entry points.
+- **Reference data:** [CWE/](CWE/) contains a large upstream CWE dataset plus utilities; it is not part of the default binary-learning loop.
+- **Design history:** [STRIPPED_ANALYSIS_DESIGN.md](STRIPPED_ANALYSIS_DESIGN.md) and [PCODE_PIPELINE.md](PCODE_PIPELINE.md). Distinguish plans from demonstrated outcomes.
+
+## Research principles
+
+- **Question before tool.** Do not deploy a sophisticated algorithm merely because it exists.
+- **Observation before assertion.** Say what an instrument measured, what you infer, and what would falsify that inference.
+- **Abstain explicitly.** `unresolved` is more useful than an attractive but unverified function name.
+- **Budget globally.** Static scoring and taxonomy help route scarce attention; deep dynamic analysis is only justified when it changes the answer.
+- **Make results discoverable.** A future reader should be able to find the relevant binary, question, evidence, and next step without reconstructing the entire project's history.
+- **Prioritize educational value.** A small convincing case study of an unknown binary matters more than many impressive-looking unsituated metrics.
+
+**Milestone worth expanding for others:** on a previously unseen stripped binary, independently produce a useful, evidence-backed explanation of a nontrivial subsystem, including a successful discriminating check, with limited manual guidance. Until that is repeatable, prefer experiments and minimal maintenance over more infrastructure.
