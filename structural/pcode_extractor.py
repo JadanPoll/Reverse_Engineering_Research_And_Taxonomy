@@ -575,7 +575,7 @@ def main():
         uniq  = len(c)
         print(f'  {lbl:<25} unique={uniq:>4}  total={total:>9,}  entropy={_entropy(c):.2f} bits')
 
-    print('\nDone. Next: pip install scikit-sequitur && python pcode_grammar.py')
+    print('\nDone. Next: pip install scikit-sequitur && python -m structural.pcode_grammar')
 
 
 def _entropy(counter: Counter) -> float:
