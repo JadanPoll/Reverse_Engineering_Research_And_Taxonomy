@@ -19,7 +19,7 @@ from __future__ import annotations
 import ctypes, json, os, sys, argparse
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pe_utils import PE
+from structural.pe_utils import PE
 
 
 # ── GUID helper ──────────────────────────────────────────────────────────────
@@ -519,7 +519,7 @@ class VTableResolver:
         """Emit vtable slot → VA mappings to knowledge bus. Returns count emitted."""
         try:
             sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            from knowledge_bus import emit_discovery
+            from evidence.knowledge_bus import emit_discovery
         except ImportError:
             print("[vtable] knowledge_bus not available — skipping KB emit")
             return 0
