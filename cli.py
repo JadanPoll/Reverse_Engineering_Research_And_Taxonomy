@@ -220,7 +220,7 @@ def cmd_brief(args):
         labels = cached_labels
         if not missing:
             try:
-                import generate_brief
+                from structural import generate_brief
                 labels = sorted(set(generate_brief.load_data()["dll_labels"]))
             except Exception:
                 pass
@@ -243,7 +243,7 @@ def cmd_brief(args):
     if not args.label:
         labels = cached_labels
         if not missing:
-            import generate_brief
+            from structural import generate_brief
             labels = sorted(set(generate_brief.load_data()["dll_labels"]))
         print("A binary label is required. Available labels:", file=sys.stderr)
         for label in labels:
@@ -263,7 +263,7 @@ def cmd_brief(args):
         with open(out_path, encoding="utf-8") as src:
             full = src.read()
     else:
-        import generate_brief
+        from structural import generate_brief
         data = generate_brief.load_data()
         labels = sorted(set(data["dll_labels"]))
         if args.list:
@@ -318,7 +318,7 @@ _CAPABILITIES = [
     ("orient", "What structural evidence helps answer the active question?",
      ["brief", "graph-metrics", "inspect-calltree"]),
     ("function-behavior", "What does this specific function appear to do for concrete inputs?",
-     ["classify", "dynamic/nano_sim.py", "dynamic/slice_sim.py"]),
+     ["classify", "reasoning.llm_simulate", "dynamic/nano_sim.py", "dynamic/slice_sim.py"]),
     ("hidden-state", "Is behavior gated by globals, initialization, pointers, or indirect dispatch?",
      ["memory-observe", "struct-recover", "vtable-resolve", "dynamic/global_sim.py", "dynamic/runtime_probe.py"]),
     ("evidence", "How strong is the current claim and has independent evidence accumulated?",
