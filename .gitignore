@@ -29,3 +29,7 @@ TESTS/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local question-relative investigation state
+.investigation.json
+.investigation.json.tmp
