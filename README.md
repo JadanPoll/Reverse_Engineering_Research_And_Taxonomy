@@ -34,7 +34,7 @@ Run commands from the repo root. Some scripts assume Windows, Ghidra, preexistin
 - **Behavior and uncertainty:** [dynamic/](dynamic/) and `runtime_probe.py`; these are not all interchangeable implementations.
 - **Accumulated evidence:** `knowledge_bus.py`, `ground_truth.py`, [briefs/](briefs/), [TAXONOMY.md](TAXONOMY.md).
 - **Corpus experiments:** `corpus_*.py`, `collect_geometry.py`, `*_survey.py`, `spectral_*.py`, and related experimental scripts.
-- **Exploratory scratch scripts:** root files beginning `_`. Preserve for reproducibility when useful; they are **not** recommended entry points.
+- **Quarantined investigation scripts:** [potential_deletion/](potential_deletion/) holds fifteen one-off mGBA, debugging, and naming experiments moved without modifying their contents. They are **not** active entry points. Review each for reusable evidence, overlap, or genuine obsolescence before rescue or deletion. Because some scripts assume the old root-relative imports and specific local files, relocation is not a promise that they run unchanged.
 - **Reference data:** [CWE/](CWE/) contains a large upstream CWE dataset plus utilities; it is not part of the default binary-learning loop.
 - **Design history:** [STRIPPED_ANALYSIS_DESIGN.md](STRIPPED_ANALYSIS_DESIGN.md) and [PCODE_PIPELINE.md](PCODE_PIPELINE.md). Distinguish plans from demonstrated outcomes.
 
@@ -47,4 +47,4 @@ Run commands from the repo root. Some scripts assume Windows, Ghidra, preexistin
 - **Make results discoverable.** A future reader should be able to find the relevant binary, question, evidence, and next step without reconstructing the entire project's history.
 - **Prioritize educational value.** A small convincing case study of an unknown binary matters more than many impressive-looking unsituated metrics.
 
-**Milestone worth expanding for others:** on a previously unseen stripped binary, independently produce a useful, evidence-backed explanation of a nontrivial subsystem, including a successful discriminating check, with limited manual guidance. Until that is repeatable, prefer experiments and minimal maintenance over more infrastructure.
+**Current consolidation boundary:** Keep shared modules and entry points at their existing import paths until their actual callers and runtime assumptions can be checked. Evaluate remaining root files by whether they are (a) reusable capability, (b) evidence/educational finding, (c) independent experiment, or (d) redundant/unclear. Only the last group belongs in quarantine. Do not conflate a one-off experiment with a disposable discovery.\n\n**Milestone worth expanding for others:** on a previously unseen stripped binary, independently produce a useful, evidence-backed explanation of a nontrivial subsystem, including a successful discriminating check, with limited manual guidance. Until that is repeatable, prefer experiments and minimal maintenance over more infrastructure.
