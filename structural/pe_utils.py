@@ -1,5 +1,5 @@
 """
-pe_utils.py — PE/PE32+ header parser: VA <-> file-offset, section lookup.
+structural/pe_utils.py — PE/PE32+ header parser: VA <-> file-offset, section lookup.
 No third-party deps (stdlib struct only).  Works for 32-bit and 64-bit PE.
 
 H=1 module: owns all PE-math facts. Every other tool imports from here.
@@ -141,7 +141,7 @@ def _verify():
     NEGATIVE: out-of-range VA must raise, not silently succeed.
     """
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from ground_truth import TARGET_DLL, IMAGE_BASE, KNOWN_VAS
+    from evidence.target_config import TARGET_DLL, IMAGE_BASE, KNOWN_VAS
 
     pe = PE(TARGET_DLL)
 
