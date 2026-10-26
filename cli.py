@@ -14,6 +14,10 @@ COMMANDS:
     extract-vas         Patch ground_truth.py VAs for all test dirs
     calibrate           Measure machine-specific thresholds → dynamic/calibration.json
     constants           Print all constants with category and provenance
+    status              Show overall analysis state
+    next [N]            Show top N functions to investigate next
+    floors              Show named analysis floors
+    holes               Print the full compound-score map
 
 CRITICAL DISTINCTIONS (common LLM mistakes):
     --args 0  Use for test-wrapper exports (no inputs, return value is fixed)
@@ -492,6 +496,14 @@ def main():
     )
     sub = ap.add_subparsers(dest="command", required=True)
 
+    # analysis orientation — implemented in analyze.py, exposed here so cli.py
+    # remains the single discoverable toolkit entry point.
+    sub.add_parser("status", help="Show overall analysis state")
+    p_next = sub.add_parser("next", help="Show functions to investigate next")
+    p_next.add_argument("n", type=int, nargs="?", default=10, help="Number to show (default 10)")
+    sub.add_parser("floors", help="Show named analysis floors")
+    sub.add_parser("holes", help="Print full compound-score map")
+
     # health
     sub.add_parser("health", help="Run _verify() on all modules + check sweep baseline")
 
@@ -597,6 +609,10 @@ def main():
         "inspect-calltree": lambda a: _cmd_inspect_calltree(a),
         "read-func":        lambda a: _cmd_read_func(a),
         "vtable-resolve":   lambda a: _cmd_vtable_resolve(a),
+        "status":         lambda _: __import__("analyze").cmd_status(),
+        "next":           lambda a: __import__("analyze").cmd_next(a.n),
+        "floors":         lambda _: __import__("analyze").cmd_floor(),
+        "holes":          lambda _: __import__("analyze").cmd_holes(),
         "health":         cmd_health,
         "sweep":          cmd_sweep,
         "classify":       cmd_classify,
