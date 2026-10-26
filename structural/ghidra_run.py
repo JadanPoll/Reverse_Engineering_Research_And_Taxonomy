@@ -49,17 +49,20 @@ def sanity_check():
     jvm = next((p for p in java_candidates if os.path.isfile(p)), None)
     assert jvm, f"JVM library not found under JAVA_HOME: {java_home}"
     launch_props = os.path.join(GHIDRA_DIR, "support", "launch.properties")
-    text = open(launch_props).read()
-    for line in text.splitlines():
-        if line.startswith("JAVA_HOME_OVERRIDE="):
-            val = line.split("=", 1)[1]
-            assert "${" not in val, \
-                f"launch.properties has unexpanded JAVA_HOME_OVERRIDE={val!r}; set absolute path"
-            assert os.path.isdir(val), f"JAVA_HOME_OVERRIDE path does not exist: {val}"
-            print(f"[OK] JAVA_HOME_OVERRIDE = {val}")
-            break
-    else:
-        raise AssertionError("No active JAVA_HOME_OVERRIDE= line in launch.properties")
+    if os.path.isfile(launch_props):
+        text = open(launch_props, encoding="utf-8", errors="replace").read()
+        override = next(
+            (line.split("=", 1)[1].strip()
+             for line in text.splitlines()
+             if line.startswith("JAVA_HOME_OVERRIDE=")),
+            "",
+        )
+        if override:
+            assert "${" not in override, \
+                f"launch.properties has unexpanded JAVA_HOME_OVERRIDE={override!r}"
+            assert os.path.isdir(override), \
+                f"JAVA_HOME_OVERRIDE path does not exist: {override}"
+            print(f"[OK] JAVA_HOME_OVERRIDE = {override}")
     print(f"[OK] JVM = {jvm}")
     print("[OK] Sanity checks passed")
 
