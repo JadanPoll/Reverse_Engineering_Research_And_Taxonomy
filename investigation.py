@@ -42,6 +42,7 @@ def _blank() -> dict:
         "stop_when": "",
         "result": "",
         "residual_uncertainty": "",
+        "reopen_when": "",
         "created_at": _now(),
         "updated_at": _now(),
     }
@@ -164,11 +165,13 @@ def set_next(action: str, *, why: str = "") -> None:
     save(state)
 
 
-def close(result: str, *, residual_uncertainty: str = "") -> None:
+def close(result: str, *, residual_uncertainty: str = "",
+          reopen_when: str = "") -> None:
     state = _require_active()
     state["status"] = "closed"
     state["result"] = result.strip()
     state["residual_uncertainty"] = residual_uncertainty.strip()
+    state["reopen_when"] = reopen_when.strip()
     save(state)
 
 
@@ -217,4 +220,6 @@ def summary(state: dict | None = None) -> str:
         lines.append(f"Result: {state['result']}")
     if state.get("residual_uncertainty"):
         lines.append(f"Residual uncertainty: {state['residual_uncertainty']}")
+    if state.get("reopen_when"):
+        lines.append(f"Reopen when: {state['reopen_when']}")
     return "\n".join(lines)
