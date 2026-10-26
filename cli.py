@@ -318,13 +318,13 @@ _CAPABILITIES = [
     ("orient", "What structural evidence helps answer the active question?",
      ["brief", "graph-metrics", "inspect-calltree"]),
     ("function-behavior", "What does this specific function appear to do for concrete inputs?",
-     ["classify", "reasoning.llm_simulate", "dynamic/nano_sim.py", "dynamic/slice_sim.py"]),
+     ["classify", "reasoning.llm_simulate", "dynamic.nano_sim", "dynamic.slice_sim"]),
     ("hidden-state", "Is behavior gated by globals, initialization, pointers, or indirect dispatch?",
-     ["memory-observe", "struct-recover", "vtable-resolve", "dynamic/global_sim.py", "dynamic/runtime_probe.py"]),
+     ["memory-observe", "struct-recover", "vtable-resolve", "dynamic.global_sim", "dynamic.runtime_probe"]),
     ("evidence", "How strong is the current claim and has independent evidence accumulated?",
      ["kb", "health", "research.validation.pipeline_audit", "evidence.knowledge_bus"]),
     ("extract", "How do I refresh the structural evidence behind the briefs?",
-     ["brief --rebuild-corpus", "ghidra_run.py"]),
+     ["brief --rebuild-corpus", "structural.ghidra_run"]),
 ]
 
 def cmd_capabilities(args):
