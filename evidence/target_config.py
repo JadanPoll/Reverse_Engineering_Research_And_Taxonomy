@@ -1,7 +1,7 @@
 """
-ground_truth.py — THE ONLY TARGET-SPECIFIC FILE IN THE TOOLKIT.
+evidence/target_config.py — optional target-specific evidence configuration.
 
-Fill this in once for your target binary. Every other tool imports from here.
+Fill this in only for investigations that need target-specific seeds, artifact paths, or a mathematical oracle.
 Running this file directly verifies your configuration against the real binary.
 
 Principle: H=1 for every fact referenced by more than one tool.
@@ -9,7 +9,7 @@ Principle: H=1 for every fact referenced by more than one tool.
   - KNOWN_VAS    : function entry points   → imported by ghidra_dump_calltree
   - KNOWN_STRINGS: string seed VAs         → imported by ghidra_dump_calltree
   - IMAGE_BASE   : confirmed from PE header → imported by all VA-math tools
-  - *_JSON paths : artifact file locations → imported by llm_name_functions, analyze
+  - *_JSON paths : artifact file locations → imported by reasoning modules
 
 Usage:
     python ground_truth.py       # run _verify(): confirms binary + invariant
@@ -19,7 +19,7 @@ import os, sys
 
 # ── Target binary ─────────────────────────────────────────────────────────────
 # Set TARGET_DLL to the absolute path of the PE/DLL you are analysing.
-# IMAGE_BASE must match the value in the PE optional header (use pe_utils or
+# IMAGE_BASE must match the value in the PE optional header (use structural.pe_utils or
 # a hex editor to confirm before filling this in).
 
 TARGET_DLL  = r"C:\path\to\your\target.dll"   # ← replace with your binary
@@ -27,7 +27,7 @@ IMAGE_BASE  = 0x180000000                       # ← replace with PE ImageBase
 
 # ── Artifact paths (all tools write/read here) ─────────────────────────────────
 
-_HERE          = os.path.dirname(os.path.abspath(__file__))
+_HERE          = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CALLTREE_JSON  = os.path.join(_HERE, "ghidra_calltree.json")
 NAMES_JSON     = os.path.join(_HERE, "ghidra_names.json")
 KNOWLEDGE_JSON = os.path.join(_HERE, "ghidra_knowledge.json")
@@ -35,7 +35,7 @@ KNOWLEDGE_JSON = os.path.join(_HERE, "ghidra_knowledge.json")
 # ── Known function entry points ────────────────────────────────────────────────
 #
 # VAs confirmed via debugger call stacks or static analysis. Passed as
-# FUNCTION_SEEDS to ghidra_dump_calltree.py so Ghidra walks the call graph
+# FUNCTION_SEEDS to structural.ghidra_dump_calltree so Ghidra walks the call graph
 # from known roots.
 #
 # Add new entries as analysis reveals them. Format: "descriptive_label": VA
