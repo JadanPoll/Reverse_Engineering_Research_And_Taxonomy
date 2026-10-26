@@ -18,6 +18,7 @@ It maps an investigation question to the relevant capabilities. For LLM use, `py
 | --- | --- | --- |
 | See what an existing analysis knows, misses, or recommends next | `python cli.py capabilities`, then `python cli.py status` / `python cli.py next 10` | Highest-level view of progress; requires prior artifacts for many functions |
 | Try the dynamic classifier on a particular binary/function | `python cli.py --help`; inspect `cli.py` examples | The current classifier's command entry point; execution is platform/dependency-specific |
+| Get the compact structural map for an analyzed binary | `python cli.py brief <label>` | Bounded LLM packet: overview, a few high-value targets, interpretation, and an explicit coverage boundary |
 | Understand how machine-code structure is categorized | [TAXONOMY.md](TAXONOMY.md) | Function archetypes, graph motifs, limitations and investigation priorities |
 | Understand the P-Code experiments | [PCODE_PIPELINE.md](PCODE_PIPELINE.md) | Lifting, clustering and corpus-level analysis |
 | Investigate *stripped* binaries where names are not available | [STRIPPED_ANALYSIS_DESIGN.md](STRIPPED_ANALYSIS_DESIGN.md) | Hypotheses and proposed research, **not** a guaranteed implemented workflow |
@@ -38,7 +39,8 @@ Run commands from the repo root. Some scripts assume Windows, Ghidra, preexistin
 ## Where the work lives
 
 - **Entry points:** [cli.py](cli.py) (primary operational entry point, including status/next/floors/holes and dynamic operations), [analyze.py](analyze.py) (compatibility wrapper for the analysis-orientation commands).
-- **Static investigation:** `ghidra_run.py`, `ghidra_dump_calltree.py`, `pcode_*.py`, `pe_utils.py`, `elf_reader.py` and `ar_reader.py`.
+- **Structural evidence pipeline:** use `python cli.py brief <label>`. The internal persisted stages are `pcode_extractor.py → pcode_normalize.py → pcode_grammar.py → pcode_cluster.py → pcode_wl.py`; normally an LLM should not invoke or carry these stages individually. Use `--rebuild-corpus` only when the shared evidence substrate actually needs refreshing.
+- **Static investigation:** `ghidra_run.py`, `ghidra_dump_calltree.py`, `pe_utils.py`, `elf_reader.py` and `ar_reader.py`.
 - **Behavior and uncertainty:** [dynamic/](dynamic/) and `runtime_probe.py`; these are not all interchangeable implementations.
 - **Accumulated evidence:** `knowledge_bus.py`, `ground_truth.py`, [briefs/](briefs/), [TAXONOMY.md](TAXONOMY.md).
 - **Corpus experiments:** `corpus_*.py`, `collect_geometry.py`, `*_survey.py`, `spectral_*.py`, and related experimental scripts.
@@ -52,6 +54,7 @@ Run commands from the repo root. Some scripts assume Windows, Ghidra, preexistin
 - **Observation before assertion.** Say what an instrument measured, what you infer, and what would falsify that inference.
 - **Abstain explicitly.** `unresolved` is more useful than an attractive but unverified function name.
 - **Budget globally.** Static scoring and taxonomy help route scarce attention; deep dynamic analysis is only justified when it changes the answer.
+- **Bound LLM context.** Persist rich intermediate evidence, but surface only the smallest structural packet likely to change the next action. Descend into the full brief, function evidence, or raw corpus on demand; do not repeatedly stuff the pipeline's internal artifacts into context.
 - **Make results discoverable.** A future reader should be able to find the relevant binary, question, evidence, and next step without reconstructing the entire project's history.
 - **Prioritize educational value.** A small convincing case study of an unknown binary matters more than many impressive-looking unsituated metrics.
 
