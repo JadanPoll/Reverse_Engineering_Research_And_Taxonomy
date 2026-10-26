@@ -18,11 +18,11 @@ pattern becomes statistically unmistakeable. This is the Mendel 3:1 ratio approa
 grow enough peas (run enough sessions) and the pattern emerges.
 
 Usage:
-    python corpus_analyze.py                     # full stability report
-    python corpus_analyze.py --unknown-only      # INVARIANT values not matched by verify()
-    python corpus_analyze.py --min-sessions 3    # only values seen in >= N sessions
-    python corpus_analyze.py --verify-variants   # run verify() with all observed pairs
-    python corpus_analyze.py --session-count     # how many sessions in corpus
+    python -m evidence.corpus_analyze                     # full stability report
+    python -m evidence.corpus_analyze --unknown-only      # INVARIANT values not matched by verify()
+    python -m evidence.corpus_analyze --min-sessions 3    # only values seen in >= N sessions
+    python -m evidence.corpus_analyze --verify-variants   # run verify() with all observed pairs
+    python -m evidence.corpus_analyze --session-count     # how many sessions in corpus
 """
 
 import os, sys, json, math, argparse
