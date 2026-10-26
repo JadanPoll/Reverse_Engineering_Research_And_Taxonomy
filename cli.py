@@ -70,7 +70,7 @@ def _compact_brief(markdown, max_functions=5):
 
     overview = section("## Overview", "## Structural Archetypes")
     interpretation = section("## Interpretation Guide for LLM", "---")
-    explore = section("#### Orchestrators / Controllers", "#### Specific Implementations")
+    explore = section("#### Large Novel Functions", "#### Smaller Novel Functions")
     rows = []
     for line in explore.splitlines():
         if line.startswith("| \`"):
@@ -80,7 +80,7 @@ def _compact_brief(markdown, max_functions=5):
 
     return {
         "overview": overview,
-        "initial_targets": rows,
+        "novel_candidates": rows,
         "interpretation": interpretation,
         "evidence_descent": (
             "The complete brief and underlying corpus artifacts remain available. "
@@ -178,13 +178,14 @@ def cmd_brief(args):
             "brief": brief_path,
             **packet,
             "coverage_boundary": "structural orientation; not behavioral proof",
-            "next": "descend only if the active question requires more detail",
+            "next": "filter structural candidates by the active question, then descend only if more evidence could change the answer",
         }, indent=2))
     else:
         print(packet["overview"])
-        if packet["initial_targets"]:
-            print("\n## Highest-value initial targets")
-            print("\n".join(packet["initial_targets"]))
+        if packet["novel_candidates"]:
+            print("\n## Structurally novel large candidates")
+            print("These are not relevance-ranked; filter them through the active question.")
+            print("\n".join(packet["novel_candidates"]))
         print("\n" + packet["interpretation"])
         print("\n## Evidence descent")
         print(packet["evidence_descent"])
