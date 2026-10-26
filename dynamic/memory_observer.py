@@ -32,7 +32,7 @@ _root = os.path.dirname(_here)
 sys.path.insert(0, _root)
 
 from dynamic.execute import DLLExecutor, ExecuteResult
-from pe_utils import PE
+from structural.pe_utils import PE
 
 
 # PE section characteristic flags
@@ -275,7 +275,7 @@ class MemoryObserver:
         image_base = self.executor.pe.image_base
         try:
             sys.path.insert(0, _root)
-            from knowledge_bus import emit_discovery
+            from evidence.knowledge_bus import emit_discovery
             for t in transitions:
                 ghidra_va = image_base + t.rva   # stable across DLL reloads
                 emit_discovery(layer, "memory_state_change", {
