@@ -27,22 +27,22 @@
 | REGISTER_HEAVY | 37 | 2.1% | Many register shuffles, COPY chains. ABI glue, vtable dispatch, or forwarding stub. |
 | SIMD_COPY | 5 | 0.3% | Bulk 16-byte memory operations. Struct initialization or bulk data copy. |
 
-## LLM Exploration Priority
+## Structural Novelty and Expected Investigation Cost
 
-Functions ordered by grammar coverage (0.0 = matches no known pattern = explore first).
-High coverage = predictable, classify cheaply. Low coverage = novel, spend LLM budget here.
+Functions ordered by grammar coverage (0.0 = matches no known pattern = structurally unusual).
+High coverage = structurally predictable and usually cheaper to understand; it does **not** mean semantically unimportant. Low coverage = structurally novel and usually deserves more LLM budget when relevant to the active question.
 
-### Explore First (coverage ≤ 0.15 — structurally novel domain logic)
+### Structurally Novel Candidates (coverage ≤ 0.15)
 
-#### Orchestrators / Controllers (large novel functions — explore these first)
+#### Large Novel Functions (possible orchestrators/controllers)
 
-*Large + low coverage = complex unique logic. These likely control subsystems.*
+*Large + low coverage suggests expensive, unusual logic. Treat these as candidate investigation targets only when they are relevant to the active question.*
 
 | Function | Archetype | Coverage | Size (bytes) |
 |---|---|---|---|
 | `IsSortingCodePointDefined` | GUARD_SIMPLE | 0.050 | 603 |
 
-#### Specific Implementations (smaller novel functions)
+#### Smaller Novel Functions
 
 | Function | Archetype | Coverage | Size (bytes) |
 |---|---|---|---|
@@ -68,7 +68,7 @@ High coverage = predictable, classify cheaply. Low coverage = novel, spend LLM b
 | `AslFileMappingDelete` | GUARD_SIMPLE | 0.017 | 113 |
 | *(+362 more)* | | | |
 
-### Infrastructure Functions (low coverage but likely utility — lower priority)
+### Likely Infrastructure Despite Low Coverage
 
 *Hypothesis: CALLER/REGISTER_HEAVY + size < 48 bytes + utility name = wrapper.*
 *The function body is trivial — but functions with many callers (★) are structural hubs.*
@@ -93,7 +93,7 @@ High coverage = predictable, classify cheaply. Low coverage = novel, spend LLM b
 | `RegisterWaitForInputIdle` | REGISTER_HEAVY | 0.017 | 0 |
 | *(+65 more)* | | | |
 
-### Classify Cheaply (coverage ≥ 0.60 — highly predictable)
+### Structurally Predictable (coverage ≥ 0.60 — usually cheaper to understand)
 
 | Function | Archetype | Coverage |
 |---|---|---|
@@ -126,7 +126,7 @@ These are the structural "vocabulary" of this binary.
 
 When exploring this binary:
 
-- **34% of functions are statically opaque** (computed dispatch, vtables). These are the most domain-specific — start here.
+- **34% of functions are statically opaque** (computed dispatch, vtables). These are strong candidates for targeted investigation when the active question touches them; static call-graph evidence is weak here.
 - **Grammar coverage 0.31** → Low: many functions are structurally novel. Budget is high per function.
 - **Token entropy 4.24 bits** → Normal diversity (system library-like)
 
