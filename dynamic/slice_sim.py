@@ -34,7 +34,7 @@ from dataclasses import dataclass, field
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dynamic.execute import DLLExecutor
-from pe_utils import PE
+from structural.pe_utils import PE
 
 try:
     import unicorn as uc
