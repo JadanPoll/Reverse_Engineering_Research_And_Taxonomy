@@ -9,11 +9,11 @@ Answers the canonical operational questions in ONE command:
   --holes     Print the full compound-score map (same as llm_name_functions --holes).
 
 Usage:
-    python analyze.py --status
-    python analyze.py --next 10
-    python analyze.py --floor
-    python analyze.py --verify
-    python analyze.py --holes
+    python -m reasoning.hole_map --status
+    python -m reasoning.hole_map --next 10
+    python -m reasoning.hole_map --floor
+    python -m reasoning.hole_map --verify
+    python -m reasoning.hole_map --holes
 
 Design principle (from autonomous_llm_framework_fpga.md Principle 5):
   Any reasoning chain with H >= 3 must be compressed to a single entry point.
@@ -25,7 +25,7 @@ Design principle (from autonomous_llm_framework_fpga.md Principle 5):
 
 import os, sys, json, argparse, subprocess
 
-_here = os.path.dirname(os.path.abspath(__file__))
+_here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _here not in sys.path:
     sys.path.insert(0, _here)
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -44,7 +44,7 @@ try:
                                TARGET_DLL, IMAGE_BASE, KNOWN_VAS, KNOWN_STRINGS)
     _GT_OK = True
 except Exception as _e:
-    print(f"[WARN] ground_truth.py not loaded: {_e}")
+    print(f"[WARN] evidence.target_config not loaded: {_e}")
     CALLTREE_JSON  = os.path.join(_here, "ghidra_calltree.json")
     NAMES_JSON     = os.path.join(_here, "ghidra_names.json")
     KNOWLEDGE_JSON = os.path.join(_here, "ghidra_knowledge.json")
