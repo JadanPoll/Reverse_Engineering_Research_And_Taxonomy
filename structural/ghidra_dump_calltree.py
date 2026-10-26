@@ -33,7 +33,7 @@ if _here not in sys.path:
     sys.path.insert(0, _here)
 
 try:
-    from ground_truth import KNOWN_VAS, KNOWN_STRINGS, CALLTREE_JSON
+    from evidence.target_config import KNOWN_VAS, KNOWN_STRINGS, CALLTREE_JSON
     FUNCTION_SEEDS_DEFAULT = list(KNOWN_VAS.values())
     STRING_SEEDS_DEFAULT   = list(KNOWN_STRINGS.keys())
     OUT_DEFAULT            = CALLTREE_JSON
@@ -605,7 +605,7 @@ def _load_field_map() -> dict:
     if _FIELD_MAP_CACHE is not None:
         return _FIELD_MAP_CACHE
     try:
-        from knowledge_bus import get_field_map
+        from evidence.knowledge_bus import get_field_map
         all_maps = get_field_map(min_stability="EPHEMERAL")
         merged: dict = {}
         conflicts: set = set()
@@ -645,7 +645,7 @@ def _load_memory_state_map() -> dict:
         return _MEMORY_STATE_CACHE
     _MEMORY_STATE_CACHE = {}
     try:
-        from knowledge_bus import get_observations
+        from evidence.knowledge_bus import get_observations
         obs = get_observations(obs_type="memory_state_change", min_stability="COMMON")
         for o in obs:
             p   = o["payload"]
