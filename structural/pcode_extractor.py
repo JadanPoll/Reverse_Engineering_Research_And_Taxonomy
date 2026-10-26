@@ -182,7 +182,7 @@ def extract_function_tokens(ctx, code_bytes: bytes, base_va: int) -> list[str]:
 
 def make_reader(dll_path: str):
     """Return (reader_fn, image_base). reader_fn(va, size) → bytes | None."""
-    from pe_utils import PE
+    from structural.pe_utils import PE
     pe = PE(dll_path)
 
     if dll_path.lower().endswith('.dll'):
@@ -295,7 +295,7 @@ def process_dll(dll_path: str, ct_path: str, label: str,
 
 def process_static_lib(a_path: str, label: str, ctx: pypcode.Context = None) -> list[dict]:
     """Extract P-Code tokens from a static library (.a) — full internal symbols."""
-    from ar_reader import extract_functions_from_archive
+    from structural.ar_reader import extract_functions_from_archive
     arch = detect_arch_from_ar(a_path)
     ctx  = pypcode.Context(arch)
     t0 = time.perf_counter()
@@ -363,7 +363,7 @@ def detect_arch_from_ar(a_path: str) -> str:
 
 def process_elf(so_path: str, label: str, ctx: pypcode.Context = None) -> list[dict]:
     """Extract P-Code tokens from a Linux ELF shared library via symbol table."""
-    from elf_reader import extract_functions
+    from structural.elf_reader import extract_functions
     arch = detect_arch(so_path)
     ctx  = pypcode.Context(arch)
     t0 = time.perf_counter()
