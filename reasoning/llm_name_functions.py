@@ -41,17 +41,17 @@ Three-way invariant:
 Tiers:
   T1  Name + description + self understanding score.  Cheap.
   T2  T1 + branch_scores list + optional annotated_code with inline comments.
-  T3  Use llm_simulate.py for concrete execution tracing (not done here).
+  T3  Use reasoning.llm_simulate for concrete execution tracing (not done here).
 
 Usage:
-    python llm_name_functions.py [--input calltree.json]
-    python llm_name_functions.py --dry-run
-    python llm_name_functions.py --resume
-    python llm_name_functions.py --tier 2          # request branch annotations
-    python llm_name_functions.py --deepen 0.60     # re-queue low compound-score funcs at T2
-    python llm_name_functions.py --holes           # print compound-score hole map, then exit
-    python llm_name_functions.py --synthesize      # consolidate observations into knowledge base
-    python llm_name_functions.py --apply           # push names to Ghidra
+    python -m reasoning.llm_name_functions [--input calltree.json]
+    python -m reasoning.llm_name_functions --dry-run
+    python -m reasoning.llm_name_functions --resume
+    python -m reasoning.llm_name_functions --tier 2          # request branch annotations
+    python -m reasoning.llm_name_functions --deepen 0.60     # re-queue low compound-score funcs at T2
+    python -m reasoning.llm_name_functions --holes           # print compound-score hole map, then exit
+    python -m reasoning.llm_name_functions --synthesize      # consolidate observations into knowledge base
+    python -m reasoning.llm_name_functions --apply           # push names to Ghidra
 """
 
 import os, sys, json, argparse, re, time, datetime
