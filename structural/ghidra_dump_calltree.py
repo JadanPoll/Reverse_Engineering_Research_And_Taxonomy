@@ -5,8 +5,8 @@
 #   walks the call graph to depth N, decompiles every function, and writes a
 #   JSON file ready for the semantic reasoning layer.
 #
-#   Seeds and output path are read from ground_truth.py (in the same folder).
-#   This script contains NO target-specific constants — edit ground_truth.py.
+#   Seeds and output path come from environment variables or the optional
+#   evidence.target_config module. This script contains no target constants.
 #
 # Usage (pyghidra headless):
 #   python -m structural.ghidra_run --calltree
@@ -24,9 +24,8 @@ from ghidra.app.cmd.function import CreateFunctionCmd
 from ghidra.app.cmd.disassemble import DisassembleCommand
 from ghidra.program.model.symbol import SourceType
 
-# ── Load target config from ground_truth.py ───────────────────────────────────
-# ground_truth.py is the ONLY file with target-specific constants.
-# Import is best-effort: if it fails, env vars or manual editing are the fallback.
+# ── Load optional target evidence configuration ──────────────────────────────
+# Import is best-effort; environment variables remain sufficient for operation.
 
 _here = os.path.dirname(os.path.abspath(__file__)) if "__file__" in dir() else os.getcwd()
 _root = os.path.dirname(_here)
