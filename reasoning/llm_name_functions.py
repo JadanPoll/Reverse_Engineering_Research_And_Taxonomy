@@ -64,7 +64,7 @@ _here = os.path.dirname(os.path.abspath(__file__))
 if _here not in sys.path:
     sys.path.insert(0, _here)
 try:
-    from ground_truth import (CALLTREE_JSON  as IN_DEFAULT,
+    from evidence.target_config import (CALLTREE_JSON  as IN_DEFAULT,
                                NAMES_JSON     as NAMES_OUT,
                                KNOWLEDGE_JSON as KNOWLEDGE_OUT,
                                TARGET_DLL     as HSS_DLL)
@@ -124,7 +124,7 @@ def _load_verified_facts():
     (orient to a known answer) rather than DEDUCTION (derive from scratch).
     """
     try:
-        from knowledge_bus import get_verify_hits
+        from evidence.knowledge_bus import get_verify_hits
         hits = get_verify_hits(min_stability="COMMON")
         return hits
     except Exception:
