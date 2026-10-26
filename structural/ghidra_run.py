@@ -1,7 +1,7 @@
 """
-ghidra_run.py — PyGhidra headless launcher for re_toolkit.
+structural/ghidra_run.py — PyGhidra headless structural extractor.
 
-Runs ghidra_dump_calltree.py against a target DLL and writes calltree.json.
+Runs structural/ghidra_dump_calltree.py against a target binary and writes calltree.json.
 Validated 2026-05-26 (same invocation pattern as hss_toolkit/ghidra_run.py).
 
 Usage:
@@ -93,7 +93,7 @@ def main():
     p.add_argument("--out",      default=None,
                    help="Output calltree JSON path (sets GHIDRA_OUT env var)")
     p.add_argument("--gt-dir",   default=None,
-                   help="Directory containing ground_truth.py (seeds + output path)")
+                   help="Directory containing a legacy/test ground_truth.py fixture")
     p.add_argument("--seeds",    default=None,
                    help="Comma-separated hex VAs of seed functions (sets GHIDRA_SEEDS)")
     args = p.parse_args()
@@ -124,7 +124,7 @@ def main():
         vas = getattr(test_gt, "KNOWN_VAS", {})
         if vas:
             extra["GHIDRA_SEEDS"] = ",".join(hex(v) for v in vas.values())
-            print(f"Seeds from ground_truth: {extra['GHIDRA_SEEDS']}")
+            print(f"Seeds from test fixture: {extra['GHIDRA_SEEDS']}")
         out_default = getattr(test_gt, "CALLTREE_JSON", None)
         if out_default and not args.out:
             extra["GHIDRA_OUT"] = out_default
