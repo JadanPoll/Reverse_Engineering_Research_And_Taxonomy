@@ -1,5 +1,5 @@
 """
-fractal_memscan.py — Adaptive hierarchical memory scanner.
+dynamic/fractal_memscan.py — Adaptive hierarchical memory scanner.
 
 Regions start in the slowest tier (wide blocks, long intervals).
 When a region changes, it splits into sub-regions and those get
