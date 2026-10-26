@@ -1,5 +1,5 @@
 """
-knowledge_bus.py — Single write channel into the shared knowledge base.
+evidence/knowledge_bus.py — Single write channel into the shared knowledge base.
 
 All three analysis layers write discoveries here. The bus applies
 stability tiers borrowed from memory_invariants.py methodology:
@@ -14,7 +14,7 @@ you how many independent times that has been confirmed — so a single lucky hit
 can't be mistaken for ground truth.
 
 Usage (any layer):
-    from knowledge_bus import emit_discovery, emit_verify_hit
+    from evidence.knowledge_bus import emit_discovery, emit_verify_hit
 
     # When fractal_memscan fires verify():
     emit_verify_hit("memscan", key_hex, iv_hex,
@@ -67,7 +67,7 @@ if _here not in sys.path:
     sys.path.insert(0, _here)
 
 try:
-    from ground_truth import KNOWLEDGE_JSON
+    from evidence.target_config import KNOWLEDGE_JSON
 except Exception:
     KNOWLEDGE_JSON = os.path.join(_here, "ghidra_knowledge.json")
 
