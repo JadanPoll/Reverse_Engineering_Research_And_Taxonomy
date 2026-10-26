@@ -6,6 +6,7 @@ USAGE:
 
 COMMANDS:
     investigation       Show/update the active question, hypotheses, evidence, and stop rule
+    context             Produce the bounded context packet an LLM should reason from
     capabilities        Rediscover capabilities by investigation goal
     brief <label>       Produce a bounded structural evidence packet
     status              Show question-relative investigation status
@@ -30,7 +31,7 @@ CRITICAL DISTINCTIONS (common LLM mistakes):
 EXAMPLES:
     py -3.13 cli.py capabilities
     py -3.13 cli.py investigation new "How does dispatch work?" --target mgba --stop "dispatch mechanism is supported by discriminating evidence"
-    py -3.13 cli.py status
+    py -3.13 cli.py context
     py -3.13 cli.py brief
     py -3.13 cli.py sweep
     py -3.13 cli.py sweep --filter state_machines crc_checksum
@@ -315,11 +316,93 @@ def cmd_brief(args):
         print(f"\n[full brief: {brief_path}]")
 
 
+# ── command: context ──────────────────────────────────────────────────────────
+
+def _investigation_context_view(state, max_evidence=8):
+    if not state:
+        return None
+    return {
+        "status": state.get("status", "active"),
+        "target": state.get("target", ""),
+        "question": state.get("question", ""),
+        "parent_goal": state.get("parent_goal", ""),
+        "decision_or_understanding": state.get("decision_or_understanding", ""),
+        "constraints": state.get("constraints", []),
+        "hypotheses": state.get("hypotheses", []),
+        "recent_evidence": state.get("evidence", [])[-max_evidence:],
+        "open_uncertainties": state.get("open_uncertainties", [])[:8],
+        "next_action": state.get("next_action", {}),
+        "stop_when": state.get("stop_when", ""),
+    }
+
+
+def cmd_context(args):
+    """Bounded LLM context: investigation state + structural options + routing policy."""
+    import json
+    import investigation
+
+    state = investigation.load()
+    inv = _investigation_context_view(state, max_evidence=args.evidence)
+    structural = None
+
+    target = state.get("target", "") if state else ""
+    if target:
+        brief_path = os.path.join(_here, "briefs", f"{target}.md")
+        if os.path.exists(brief_path):
+            with open(brief_path, encoding="utf-8") as src:
+                structural = _compact_brief(src.read(), max_functions=args.targets)
+            structural["brief"] = f"briefs/{target}.md"
+
+    packet = {
+        "investigation": inv,
+        "structural_orientation": structural,
+        "reasoning_policy": [
+            "Treat the active question and parent goal as the relevance criterion.",
+            "Treat structural signals as priors about role, uncertainty, and investigation cost, not semantic importance.",
+            "Compare live hypotheses and prefer the cheapest observation likely to separate them.",
+            "Keep observations distinct from interpretations; update hypothesis status only with a stated reason.",
+            "Escalate from static to behavioral/runtime evidence only when a consequential uncertainty survives.",
+            "Stop when the recorded stopping condition is satisfied or the next evidence is not worth its cost.",
+        ],
+        "capability_groups": [
+            {"goal": goal, "use_when": use_when, "capabilities": capabilities}
+            for goal, use_when, capabilities in _CAPABILITIES
+        ],
+    }
+
+    if args.json:
+        print(json.dumps(packet, indent=2))
+        return
+
+    if state:
+        print(investigation.summary(state))
+    else:
+        print("No active investigation. Frame the question before choosing analysis machinery.")
+
+    if structural:
+        print("\nSTRUCTURAL ORIENTATION")
+        print(structural["overview"])
+        print("\nCandidate bands (cost/role, not relevance):")
+        for key, rows in structural["candidate_bands"].items():
+            if rows:
+                print(f"  {key}:")
+                for row in rows:
+                    print(f"    {row}")
+    elif target:
+        print(f"\nNo cached structural brief for target: {target}")
+
+    print("\nREASONING POLICY")
+    for rule in packet["reasoning_policy"]:
+        print(f"  - {rule}")
+
+    print("\nUse cli.py capabilities only when the next evidence mechanism is not obvious.")
+
+
 # ── command: capabilities ─────────────────────────────────────────────────────
 
 _CAPABILITIES = [
     ("frame", "What are we actually trying to understand, what hypotheses are live, and when should we stop?",
-     ["investigation", "status"]),
+     ["context", "investigation", "status"]),
     ("orient", "What structural evidence helps answer the active question?",
      ["brief", "graph-metrics", "inspect-calltree"]),
     ("function-behavior", "What does this specific function appear to do for concrete inputs?",
@@ -847,6 +930,12 @@ def main():
     p_close.add_argument("result")
     p_close.add_argument("--residual", default="")
 
+    # Bounded reasoning packet: preferred LLM entry point after framing.
+    p_ctx = sub.add_parser("context", help="Produce bounded question-relative context for LLM reasoning")
+    p_ctx.add_argument("--json", action="store_true", help="Machine-readable context packet")
+    p_ctx.add_argument("--targets", type=int, default=4, help="Candidates per structural band")
+    p_ctx.add_argument("--evidence", type=int, default=8, help="Recent evidence records to include")
+
     # Structural brief: one operational capability over the multi-stage P-Code pipeline.
     p_brief = sub.add_parser("brief", help="Produce a compact structural brief for a binary")
     p_brief.add_argument("label", nargs="?", help="Analyzed binary label")
@@ -976,6 +1065,7 @@ def main():
         "read-func":        lambda a: _cmd_read_func(a),
         "vtable-resolve":   lambda a: _cmd_vtable_resolve(a),
         "investigation":  cmd_investigation,
+        "context":        cmd_context,
         "brief":          cmd_brief,
         "capabilities":   cmd_capabilities,
         "status":         cmd_status,
