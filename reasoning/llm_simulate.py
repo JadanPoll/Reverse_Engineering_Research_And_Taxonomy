@@ -47,7 +47,7 @@ _here = os.path.dirname(os.path.abspath(__file__))
 if _here not in sys.path:
     sys.path.insert(0, _here)
 try:
-    from ground_truth import (CALLTREE_JSON  as IN_CALLTREE,
+    from evidence.target_config import (CALLTREE_JSON  as IN_CALLTREE,
                                NAMES_JSON     as IN_NAMES,
                                KNOWLEDGE_JSON as IN_KNOWLEDGE)
 except ImportError:
