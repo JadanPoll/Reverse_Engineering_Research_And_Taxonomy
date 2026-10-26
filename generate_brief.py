@@ -315,7 +315,7 @@ def generate_brief(label: str, data: dict) -> str:
     lines.append('## LLM Exploration Priority')
     lines.append('')
     lines.append('Functions ordered by grammar coverage (0.0 = matches no known pattern = explore first).')
-    lines.append('High coverage = predictable, classify cheaply. Low coverage = novel, spend LLM budget here.')
+    lines.append('High coverage = structurally predictable and usually cheaper to understand; it does **not** mean semantically unimportant. Low coverage = structurally novel and usually deserves more LLM budget when relevant to the active question.')
     lines.append('')
     lines.append('### Explore First (coverage ≤ 0.15 — structurally novel domain logic)')
     lines.append('')
@@ -387,7 +387,7 @@ def generate_brief(label: str, data: dict) -> str:
             lines.append(f'| *(+{len(novel_utility)-15} more)* | | | |')
         lines.append('')
 
-    lines.append('### Classify Cheaply (coverage ≥ 0.60 — highly predictable)')
+    lines.append('### Structurally Predictable (coverage ≥ 0.60 — cheaper to understand)')
     lines.append('')
     common = [(n, cl, cov) for n, cl, cov in fn_coverage if cov is not None and cov >= 0.60]
     if common:
@@ -422,7 +422,7 @@ def generate_brief(label: str, data: dict) -> str:
         lines.append(f'- **{isolation_pct:.0f}% of functions are statically opaque** (computed dispatch, vtables). '
                      'These are the most domain-specific — start here.')
     lines.append(f'- **Grammar coverage {mean_cov:.2f}** → '
-                 + ('High: most functions match known C patterns. Budget is low per function.'
+                 + ('High: most functions match known C patterns. Budget is low per function, but question relevance still determines whether to inspect them.'
                     if mean_cov > 0.35
                     else 'Low: many functions are structurally novel. Budget is high per function.'))
     lines.append(f'- **Token entropy {entropy:.2f} bits** → '
