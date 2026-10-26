@@ -50,13 +50,13 @@ sys.path.insert(0, _here)
 
 # ── command: brief ────────────────────────────────────────────────────────────
 
-def _run_stage(script, *extra):
+def _run_stage(module, *extra):
     """Run one internal corpus stage while keeping the user-facing operation singular."""
     import subprocess
-    cmd = [sys.executable, os.path.join(_here, script), *extra]
+    cmd = [sys.executable, "-m", module, *extra]
     result = subprocess.run(cmd, cwd=_here)
     if result.returncode != 0:
-        raise SystemExit(f"PIPELINE_STAGE_FAILED: {script} exited {result.returncode}")
+        raise SystemExit(f"PIPELINE_STAGE_FAILED: {module} exited {result.returncode}")
 
 
 def _compact_brief(markdown, max_functions=5):
@@ -107,15 +107,15 @@ def cmd_brief(args):
 
     if args.rebuild_corpus:
         print("[brief] rebuilding shared structural corpus", file=sys.stderr)
-        _run_stage("pcode_extractor.py")
-        _run_stage("pcode_normalize.py")
+        _run_stage("structural.pcode_extractor")
+        _run_stage("structural.pcode_normalize")
         _run_stage(
-            "pcode_grammar.py",
+            "structural.pcode_grammar",
             "--corpus", "pcode_corpus_norm.jsonl",
             "--out", "pcode_grammar_norm.npz",
         )
-        _run_stage("pcode_cluster.py")
-        _run_stage("pcode_wl.py")
+        _run_stage("structural.pcode_cluster")
+        _run_stage("structural.pcode_wl")
 
     out_dir = os.path.join(_here, "briefs")
     os.makedirs(out_dir, exist_ok=True)
