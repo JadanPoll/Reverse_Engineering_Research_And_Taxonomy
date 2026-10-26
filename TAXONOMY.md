@@ -8,72 +8,72 @@ Archetypes are named by their dominant P-Code grammar pattern.
 ### CALLER
 **Signature**: `(COPY_8)* INT_SUB_8 STORE_8 (CALL|CALLIND) __SEP__`  
 **Meaning**: Sets up a stack frame, optionally saves registers, then calls another function and returns.  
-**LLM budget**: LOW. These functions are largely boilerplate. Only explore if it's an entry point or the callee is interesting.  
+**Expected reasoning cost if relevant**: LOW. Usually mechanical delegation; inspect deeply only when the active question depends on the caller/callee relationship.  
 **Appears in**: All DLLs. High fraction in QEMU (JIT dispatch), python312 (interpreter loop).
 
 ### READER
 **Signature**: `INT_ADD_8 LOAD_8 COPY_8` or `INT_ADD_8 LOAD_4 COPY_4 INT_ZEXT_8`  
 **Meaning**: Reads one or more struct/array fields. Access patterns directly reveal data layout.  
-**LLM budget**: MEDIUM. Run struct_recover.py on these. The field offsets tell you the struct layout.  
+**Expected reasoning cost if relevant**: MEDIUM. Prefer structural field recovery before asking an LLM to infer layout from pseudocode.  
 **Appears in**: All DLLs, especially combase (COM interface reads) and esent (B-tree node reads).
 
 ### WRITER
 **Signature**: `INT_ADD_8 COPY_8 STORE_8` or `INT_ADD_8 COPY_4 STORE_4`  
 **Meaning**: Writes one or more struct/array fields. Combined with READER: identifies mutable state.  
-**LLM budget**: MEDIUM. These tell you what fields are initialized/updated. T_field_type classifies each field.  
+**Expected reasoning cost if relevant**: MEDIUM. Field writes are useful state evidence; deterministic field recovery should do the clerical work first.  
 **Appears in**: mgba (GBA state writes), winhttp (HTTP session state), ntdll (NT object updates).
 
 ### GETTER
 **Signature**: `LOAD_8 INT_ADD_8 RETURN __SEP__` or `COPY_8 LOAD_8 INT_ADD_8 RETURN __SEP__`  
 **Meaning**: Accessor function — loads one field and returns it immediately. Very short.  
-**LLM budget**: VERY LOW. The function name + return type is all you need. Skip body.  
+**Expected reasoning cost if relevant**: VERY LOW. Often an accessor; the body rarely deserves deep reasoning unless the question specifically concerns the field semantics.  
 **Appears in**: mgba (65% of GBA register accessors), kernelbase, crypt32.
 
 ### GUARD_SIMPLE
 **Signature**: `CBRANCH __SEP__` with one comparison before it  
 **Meaning**: Single entry condition. The function checks one thing and exits if it fails.  
-**LLM budget**: LOW-MEDIUM. The constraint IS the information — T_field_type classifies what's being checked.  
+**Expected reasoning cost if relevant**: LOW-MEDIUM. The condition often carries most of the useful information.  
 **Appears in**: ntdll (28% — NT guards everything), dxgi (COM interface validation).
 
 ### GUARD_COMPOUND
 **Signature**: `BOOL_OP_1 CBRANCH __SEP__` — multiple conditions combined  
 **Meaning**: Policy validation — multiple conditions must all pass before proceeding.  
-**LLM budget**: MEDIUM. The combination of conditions defines the invariant.  
+**Expected reasoning cost if relevant**: MEDIUM. The conjunction/disjunction of conditions is often the main semantic evidence.  
 **Appears in**: ntdll (dominant pattern — 12.1% of ntdll), rpcrt4 (RPC security).
 
 ### REGISTER_HEAVY
 **Signature**: `COPY_8 COPY_8 COPY_8 COPY_8` chains, many COPY variants  
 **Meaning**: Heavy register manipulation. Usually ABI glue, vtable dispatch boilerplate, or forwarding stubs.  
-**LLM budget**: LOW. Mostly mechanical. Only interesting if the CALLIND target is revealing.  
+**Expected reasoning cost if relevant**: LOW for ordinary ABI glue; potentially higher when indirect dispatch is itself consequential to the question.  
 **Appears in**: combase (14.9% — COM vtable ABI), dxgi (5.4% — forwarding stubs).
 
 ### SIMD_COPY
 **Signature**: `INT_ADD_8 COPY_16 STORE_16`  
 **Meaning**: 128-bit bulk copy operations. Struct initialization or bulk data movement using SSE/AVX.  
-**LLM budget**: LOW. Struct initialization — use struct_recover.py instead of LLM.  
+**Expected reasoning cost if relevant**: LOW. Prefer deterministic structure recovery to manual LLM interpretation.  
 **Appears in**: kernelbase, dxgi, winhttp (TLS buffer initialization).
 
 ### ARITHMETIC
 **Signature**: `INT_ADD_8 INT_MULT_8` chains without significant memory access  
 **Meaning**: Pure integer computation. No dominant memory pattern. Algorithm implementation.  
-**LLM budget**: HIGH. These encode domain algorithms — exactly what you want LLM to analyze.  
+**Expected reasoning cost if relevant**: HIGH. Pure computation can require semantic reasoning, but relevance still comes from the active question.  
 **Appears in**: linux_x264 (17% — encoder decision loops), esent (B-tree arithmetic).
 
 ### FLOAT_COMPUTE
 **Signature**: `FLOAT_ARITH_8 FLOAT_ARITH_8` chains  
 **Meaning**: Floating-point computation. Signal processing, physics, graphics.  
-**LLM budget**: HIGH if domain-specific, LOW if standard math (sin, sqrt).  
+**Expected reasoning cost if relevant**: variable. Domain-specific numerical code can be expensive; recognizable standard math is cheap.  
 **Appears in**: mgba (audio/DSP), linux_opus (CELT spectral computation).
 
 ### MIXED
 **Signature**: No single dominant grammar rule  
 **Meaning**: Complex function with diverse operations. Often the most algorithmically rich.  
-**LLM budget**: HIGH. No single structural category — the complexity IS the information.  
+**Expected reasoning cost if relevant**: HIGH. Mixed structure gives the static machinery fewer shortcuts.  
 **Appears in**: All DLLs. High in linux_x264 (11.6%) and mgba (7%).
 
 ### NOISE (unclassified)
 **Meaning**: Matches no cluster with sufficient density. Structurally unique in the corpus.  
-**LLM budget**: HIGHEST. These are the functions most unlike everything else we've seen.  
+**Expected reasoning cost if relevant**: HIGHEST/UNCERTAIN. Lack of a cluster match means the existing structural vocabulary predicts poorly; it does not imply importance.  
 **Appears in**: mgba (4.7%), linux_x264 (6.8%), linux_ssl (2.7%).
 
 ---
@@ -129,32 +129,35 @@ Beyond individual function archetypes, call-graph context reveals design pattern
 
 ---
 
-## Grammar Coverage as LLM Budget
+## Grammar Coverage as Structural Predictability
 
 ```
 coverage = fraction of 300 grammar rules matched by this function
 
-0.00 ──── Novel ──────────────────────────────────── Explore (HIGH budget)
-0.15
-0.35 ──── Moderate ────────────────────────────────── Medium budget
-0.50
-0.60 ──── Predictable ──────────────────────────────── Classify cheaply (LOW budget)
+0.00 ──── structurally unusual ───────────── high expected reasoning uncertainty
+0.35 ──── moderate ───────────────────────── medium expected cost
+0.60 ──── predictable ────────────────────── usually cheaper to interpret
 1.00
 ```
 
-DLL coverage rankings (lower = more novel):
+Coverage is an **investigation-cost prior**, not an importance score. A predictable
+function may be central to the question, while a novel function may be irrelevant.
+The useful routing quantity is question relevance and expected uncertainty reduction
+relative to the cost of obtaining the evidence.
+
+DLL coverage rankings (lower = more structurally novel):
 - linux_ssl: 0.201 · linux_python: 0.213 · linux_sqlite: 0.245
 - winhttp: 0.406 · crypt32: 0.410 · py_sqlite: 0.391
 
 ---
 
-## Isolation Fraction as Exploration Priority
+## Isolation Fraction as Static-Opacity Signal
 
 Functions with no resolvable static callees (computed dispatch, vtables, function pointers):
 
 ```
-Low isolation (< 20%)  → well-characterized by static analysis → lower LLM priority
-High isolation (> 40%) → statically opaque → HIGHEST LLM priority
+Low isolation (< 20%)  → static call relationships are comparatively informative
+High isolation (> 40%) → static call relationships are incomplete; targeted dynamic evidence may have higher value
 ```
 
 | DLL | Isolation | Why |
@@ -175,22 +178,19 @@ object-file-granularity linking. When a DLL links the CRT statically, the linker
 entire .obj files — if one function in the .obj is needed, all others come along. Without
 /OPT:REF dead code elimination, these appear in the binary with no callers.
 
-**Case 2 — Computed dispatch target (highest educational value):**
+**Case 2 — Possible computed-dispatch target (higher static uncertainty):**
 Domain-specific functions called through function pointer tables, vtable slots, or
 jump tables that Ghidra can't statically trace.
 
 **The discriminant is the function's nature:**
-- Standard utility functions (`wcsstr`, `memcmp`, etc.) are NEVER called via function
-  pointers in normal code. If Ghidra sees 0 callers for these, it's Case 1 (dead code).
-- Domain-specific functions (`ScpCfgHandleInvalidCallTarget`, ARM7 opcode handlers) ARE
-  designed to be in dispatch tables. If Ghidra sees 0 callers, it's Case 2 (computed
-  dispatch — highest LLM priority).
+- Standard utility functions (`wcsstr`, `memcmp`, etc.) are often ordinary linked helpers; zero callers makes dead/unreached code plausible, but does not prove it.
+- Domain-specific handlers, callbacks, vtable methods, or opcode handlers are more plausibly reached through indirect dispatch. Zero visible callers therefore raises the value of checking dispatch evidence when the active question depends on them.
 
 The indirect/function-pointer pattern is itself domain knowledge. State machines,
 CPU emulators, COM vtables, JIT callbacks — these domains REQUIRE dispatch tables.
 String utilities do not. The 0-caller pattern means different things depending on
 what kind of function it is.
 
-**Implication for LLM exploration budget:**
-- Isolated utility function → dead code, skip (LLM recognizes by name)
-- Isolated domain function → computed dispatch target, explore immediately
+**Implication for investigation routing:**
+- Isolated utility-like function → cheap prior toward linked/dead/infrastructure code; verify only if relevant.
+- Isolated domain-like function → static reachability is uncertain; consider vtable/jump-table/runtime evidence if the active question touches it.
