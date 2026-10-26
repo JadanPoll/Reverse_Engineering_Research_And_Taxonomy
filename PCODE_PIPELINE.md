@@ -1,24 +1,28 @@
 # P-Code Structural Taxonomy Pipeline
 
-Static analysis pipeline that turns any binary (PE/ELF/static lib) into a
-**structural brief** — a Markdown document that gives an LLM everything it needs
-to explore the binary efficiently with minimal inference hops.
+Internal structural-orientation machinery that turns analyzed binaries into a
+**structural brief**. The brief is a bounded evidence/navigation artifact, not a
+semantic verdict: structural novelty estimates expected investigation cost and
+uncertainty, while the active question determines relevance.
 
-## Quick Start
+## Operational use
+
+Normally use the single public capability:
 
 ```bash
-# 1. Run the full pipeline on current corpus
-py -3.13 -m structural.pcode_extractor       # lift P-Code from all targets
-py -3.13 -m structural.pcode_normalize       # level-1 normalization
-py -3.13 -m structural.pcode_grammar --corpus pcode_corpus_norm.jsonl --out pcode_grammar_norm.npz
-py -3.13 -m structural.pcode_cluster --grammar pcode_grammar_norm.npz
-py -3.13 -m structural.pcode_wl              # call-graph WL kernel
-
-# 2. Generate a structural brief for any target
-py -3.13 generate_brief.py advapi32
-py -3.13 generate_brief.py linux_x264 --out briefs/linux_x264.md
-py -3.13 generate_brief.py --all      # generate briefs/ for every target
+python cli.py brief <label>
+python cli.py brief <label> --json
 ```
+
+Only refresh the shared structural substrate when necessary:
+
+```bash
+python cli.py brief <label> --rebuild-corpus
+```
+
+The stages below remain separate internally because their persisted artifacts make
+experimentation and recomputation cheaper. They are not commands an LLM should
+normally need to remember.
 
 ## Pipeline Architecture
 
@@ -26,40 +30,40 @@ py -3.13 generate_brief.py --all      # generate briefs/ for every target
 Binary (PE/ELF/.a)
        │
        ▼
-pcode_extractor.py ──────────────────► pcode_corpus.jsonl
+structural.pcode_extractor ──────────────────► pcode_corpus.jsonl
   • Lifts P-Code via pypcode              (token sequences per function)
   • Level-0 normalization                pcode_vectors.npz
   • Encodes output sizes: LOAD_8         (frequency vectors)
   • Supports: .dll .exe .so .a
        │
        ▼
-pcode_normalize.py ──────────────────► pcode_corpus_norm.jsonl
+structural.pcode_normalize ──────────────────► pcode_corpus_norm.jsonl
   • Level-1 normalization                (normalized token sequences)
   • Prologue: (COPY_8)* INT_SUB_8 STORE_* → __PROLOGUE__
   • Epilogue: LOAD_8 INT_ADD_8 RETURN → __EPILOGUE__
   • Removes OVERFLOW_CHECK_1 (x86 flag artifact)
        │
        ▼
-pcode_grammar.py ────────────────────► pcode_grammar_norm.npz
+structural.pcode_grammar ────────────────────► pcode_grammar_norm.npz
   • Sequitur grammar induction             (function × rule presence matrix)
   • Finds recurring P-Code idioms
   • Default: top 300 rules
        │
        ▼
-pcode_cluster.py ────────────────────► pcode_clusters.json
+structural.pcode_cluster ────────────────────► pcode_clusters.json
   • Variance weighting p*(1-p)             (cluster assignments)
   • TruncatedSVD(300→30)
   • HDBSCAN(min_cluster_size=200)
   • Current: 141 clusters, 3.8% noise
        │
        ▼
-pcode_wl.py ─────────────────────────► pcode_wl.json
+structural.pcode_wl ─────────────────────────► pcode_wl.json
   • Weisfeiler-Lehman kernel               (WL labels at depth 0-3)
   • Uses call graph from calltrees         (isolation flags)
   • Saturates at depth-2 (design patterns are 2-hop phenomena)
        │
        ▼
-generate_brief.py ───────────────────► briefs/<label>.md
+structural.generate_brief ───────────────────► briefs/<label>.md
   • Synthesizes all above                  (LLM-consumable Markdown)
   • Archetype distribution
   • Grammar coverage (LLM budget predictor)
@@ -69,7 +73,7 @@ generate_brief.py ───────────────────► b
 
 ## Normalization Levels
 
-### Level-0 (in `pcode_extractor.py`) — always applied
+### Level-0 (in `structural.pcode_extractor`) — always applied
 
 Collapses compiler noise while preserving structural signal:
 
@@ -91,7 +95,7 @@ Collapses compiler noise while preserving structural signal:
 `LOAD_8` vs `LOAD_4` vs `LOAD_1` carry different structural signal.
 Output size chosen (not input) because output is the causal downstream signal.
 
-### Level-1 (in `pcode_normalize.py`) — applied to normalized corpus
+### Level-1 (in `structural.pcode_normalize`) — applied to normalized corpus
 
 | Pattern | Replacement | Rationale |
 |---|---|---|
@@ -103,7 +107,7 @@ Output size chosen (not input) because output is the causal downstream signal.
 
 ### PE/DLL (Windows)
 
-1. Add to `discover_targets()` in `pcode_extractor.py` via the `extra_dlls` dict:
+1. Add to `discover_targets()` in `structural.pcode_extractor` via the extractor's `extra_dlls` configuration:
    ```python
    extra_dlls = {
        'mylib': 'C:/path/to/mylib.dll',
@@ -115,8 +119,8 @@ Output size chosen (not input) because output is the causal downstream signal.
 
 ### ELF (.so, Linux shared library)
 
-1. Add to `linux_libs/` (or use `get_linux_libs.py` for Debian packages).
-2. Add to `ELF_LABELS` dict in `pcode_extractor.py`.
+1. Add to `linux_libs/` (or use `tools/get_linux_libs.py` for Debian packages).
+2. Add to `ELF_LABELS` dict in `structural.pcode_extractor`.
 3. Architecture auto-detected from ELF header.
 
 ```python
@@ -137,7 +141,7 @@ STATIC_LABELS = {
 
 Requires the `-dev` package. Extract with:
 ```bash
-py -3.13 get_linux_libs.py   # add to WANT list in that script
+python -m tools.get_linux_libs   # add to WANT list in that script
 ```
 
 ### Zephyr RTOS / ARM firmware
@@ -182,22 +186,25 @@ Cosine similarity between same-algorithm cross-compiler binaries:
 
 **Implication**: Structural briefs trained on Windows DLLs apply to Linux .so files.
 
-## Grammar Coverage as LLM Budget
+## Grammar Coverage as Investigation-Cost Signal
 
-`grammar_coverage(function)` = fraction of 300 grammar rules matched.
+`grammar_coverage(function)` = fraction of the learned grammar rules matched.
 
-| Coverage | Interpretation | LLM budget |
+Coverage is useful for estimating **structural predictability / expected reasoning
+cost**. It is not a relevance or importance score. A highly predictable function
+may still be central to the active question; a structurally novel function may be
+irrelevant.
+
+| Coverage | Structural interpretation | Expected reasoning cost |
 |---|---|---|
-| 0.00 | Matches no known pattern | HIGH — explore first |
-| 0.10–0.20 | Structurally novel | HIGH |
-| 0.20–0.35 | Moderate novelty | MEDIUM |
-| 0.35–0.50 | Predictable | LOW |
-| 0.50+ | Highly predictable | MINIMAL — classify only |
+| 0.00 | Matches no known pattern | High / uncertain |
+| 0.10–0.20 | Structurally novel | High |
+| 0.20–0.35 | Moderate novelty | Medium |
+| 0.35–0.50 | Predictable | Lower |
+| 0.50+ | Highly predictable | Usually low |
 
-Coverage ordering by DLL (lower = more novel):
-- linux_ssl: 0.201 · linux_python: 0.213 · linux_sqlite: 0.245 · linux_libc: 0.247
-- python312: 0.306 · mgba: 0.338 · esent: 0.344
-- crypt32: 0.410 · winhttp: 0.406 · py_sqlite: 0.391
+Use question relevance × expected uncertainty reduction relative to investigation
+cost when choosing what to inspect. Do not route solely from coverage.
 
 ## WL Kernel (Call Graph Context)
 
@@ -207,13 +214,13 @@ Key finding: WL saturates at depth-2 (only 11% new labels at depth-3).
 
 Isolation fraction (functions with no resolvable static callees):
 - linux_opus: 2.4% · qemu_avr/i386: ~20% · mgba: 65.8%
-- High isolation = statically opaque = highest LLM exploration priority
+- High isolation = statically opaque; this raises the value of targeted dynamic evidence when the active question touches those regions
 
 ## Key Findings
 
 1. **108 token types** — compiler-invariant vocabulary; saturated at 21 targets
 2. **WL depth-2 saturation** — design patterns are 2-hop phenomena
-3. **Grammar coverage = LLM budget predictor** — free, static, runs in seconds
+3. **Grammar coverage estimates structural predictability/cost** — free, static, and useful only after conditioning on the question
 4. **Cross-domain clustering** — mGBA + x264 + QEMU share dispatch-heavy archetype
 5. **Codec entropy** — x264/Opus at 4.65-4.67 bits (highest in corpus) confirms novel structure
 6. **Variance weighting p(1-p)** — correct null model for binary feature clustering
