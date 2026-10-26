@@ -117,11 +117,10 @@ def add_observations(knowledge, new_obs):
     return added
 
 def _load_verified_facts():
-    """
-    Load COMMON/INVARIANT verify_hits from knowledge_bus.
-    These are mathematically confirmed (K, IV) pairs — not inferences.
-    Presenting them at the top of every prompt lets the LLM do RECOGNITION
-    (orient to a known answer) rather than DEDUCTION (derive from scratch).
+    """Load target-oracle hits confirmed by multiple independent observations.
+
+    These are evidence records, not a universal claim about what the target's
+    oracle means. Target-specific semantics stay in evidence.target_config.
     """
     try:
         from evidence.knowledge_bus import get_verify_hits
@@ -151,9 +150,9 @@ def build_knowledge_context(knowledge):
             stab = h.get("stability", "?")
             layers = h.get("layers_seen", [])
             lines.append(f"  [{stab} — layers: {layers}]")
-            lines.append(f"    KEY (K) = {h['key']}  (16 bytes)")
-            lines.append(f"    IV      = {h['iv']}  (16 bytes)")
-            lines.append(f"    Invariant: AES-128-CBC-Encrypt(K, IV, MachineGUID) == KEY1")
+            lines.append(f"    Candidate A = {h['key']}")
+            lines.append(f"    Candidate B = {h['iv']}")
+            lines.append("    Target-specific oracle matched this candidate pair.")
             if h.get("va_hints"):
                 lines.append(f"    Observed near VAs: {h['va_hints']}")
         lines.append("")
@@ -186,17 +185,10 @@ def try_load_pe(dll_path):
     if not dll_path or not os.path.isfile(dll_path):
         return None
     try:
-        import importlib.util
-        here = os.path.dirname(os.path.abspath(__file__))
-        spec = importlib.util.spec_from_file_location(
-            "pe_utils", os.path.join(here, "pe_utils.py"))
-        if not spec:
-            return None
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
-        return mod.PE(dll_path)
+        from structural.pe_utils import PE
+        return PE(dll_path)
     except Exception as e:
-        print(f"[pe_utils] {e}")
+        print(f"[structural.pe_utils] {e}")
         return None
 
 # ── Compound score ─────────────────────────────────────────────────────────────
@@ -763,14 +755,39 @@ def main():
 # ── Apply names to Ghidra ──────────────────────────────────────────────────────
 
 def apply_names(names_path, tree):
+    """Apply accepted names to a configured Ghidra project.
+
+    This operation is intentionally configuration-driven; no target or machine
+    path is embedded in the reasoning layer.
+    """
     print("\nApplying names to Ghidra project...")
     try:
-        import pyghidra
+        import pyghidra  # noqa: F401
     except ImportError:
-        print("pyghidra not available. Use py -3.13")
+        print("pyghidra not available in this Python environment")
         return
+
+    ghidra_dir = os.environ.get("GHIDRA_DIR", "")
+    project_dir = os.environ.get("GHIDRA_PROJECT_DIR", "")
+    project_name = os.environ.get("GHIDRA_PROJECT_NAME", "re_project")
+    process_name = os.environ.get("GHIDRA_PROCESS_NAME", "")
+    if not process_name and TARGET_DLL_PATH:
+        process_name = os.path.basename(TARGET_DLL_PATH)
+
+    missing = [
+        name for name, value in [
+            ("GHIDRA_DIR", ghidra_dir),
+            ("GHIDRA_PROJECT_DIR", project_dir),
+            ("GHIDRA_PROCESS_NAME or TARGET_DLL", process_name),
+        ] if not value
+    ]
+    if missing:
+        print("GHIDRA_APPLY_NOT_CONFIGURED: " + ", ".join(missing))
+        return
+
     with open(names_path, encoding="utf-8") as f:
         names = json.load(f)
+
     script_lines = [
         "# @runtime PyGhidra",
         "# @title Apply LLM function names",
@@ -791,22 +808,30 @@ def apply_names(names_path, tree):
         "            currentProgram.endTransaction(tx, True)",
         "print('Applied ' + str(applied) + ' names')",
     ]
-    apply_script = r"C:\Users\nathan37\Desktop\ghidra_apply_names.py"
-    with open(apply_script, "w") as f:
-        f.write("\n".join(script_lines))
-    import subprocess
-    result = subprocess.run(
-        ["py", "-3.13", "-m", "pyghidra.ghidra_launch",
-         "--install-dir", r"C:\Users\nathan37\Desktop\ghidra",
-         "ghidra.app.util.headless.AnalyzeHeadless",
-         r"C:\Users\nathan37\Desktop\hss_proj", "hss_project",
-         "-process", "Hss.Store.Client.dll",
-         "-postScript", apply_script,
-         "-scriptPath", r"C:\Users\nathan37\Desktop"],
-        capture_output=True, text=True)
-    print(result.stdout[-2000:] if result.stdout else "(no output)")
-    if result.returncode != 0:
-        print("stderr:", result.stderr[-1000:])
+
+    import subprocess, tempfile
+    fd, apply_script = tempfile.mkstemp(prefix="re_apply_names_", suffix=".py")
+    os.close(fd)
+    try:
+        with open(apply_script, "w", encoding="utf-8") as f:
+            f.write("\n".join(script_lines))
+        result = subprocess.run(
+            [sys.executable, "-m", "pyghidra.ghidra_launch",
+             "--install-dir", ghidra_dir,
+             "ghidra.app.util.headless.AnalyzeHeadless",
+             project_dir, project_name,
+             "-process", process_name,
+             "-postScript", apply_script,
+             "-scriptPath", os.path.dirname(apply_script)],
+            capture_output=True, text=True)
+        print(result.stdout[-2000:] if result.stdout else "(no output)")
+        if result.returncode != 0:
+            print("stderr:", result.stderr[-1000:])
+    finally:
+        try:
+            os.unlink(apply_script)
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":
