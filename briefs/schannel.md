@@ -27,16 +27,16 @@
 | NOISE | 77 | 3.8% | No cluster match. Structurally unusual — highest LLM exploration priority. |
 | SIMD_COPY | 12 | 0.6% | Bulk 16-byte memory operations. Struct initialization or bulk data copy. |
 
-## LLM Exploration Priority
+## Structural Novelty and Expected Investigation Cost
 
-Functions ordered by grammar coverage (0.0 = matches no known pattern = explore first).
-High coverage = predictable, classify cheaply. Low coverage = novel, spend LLM budget here.
+Functions ordered by grammar coverage (0.0 = matches no known pattern = structurally unusual).
+High coverage = structurally predictable and usually cheaper to understand; it does **not** mean semantically unimportant. Low coverage = structurally novel and usually deserves more LLM budget when relevant to the active question.
 
-### Explore First (coverage ≤ 0.15 — structurally novel domain logic)
+### Structurally Novel Candidates (coverage ≤ 0.15)
 
-#### Orchestrators / Controllers (large novel functions — explore these first)
+#### Large Novel Functions (possible orchestrators/controllers)
 
-*Large + low coverage = complex unique logic. These likely control subsystems.*
+*Large + low coverage suggests expensive, unusual logic. Treat these as candidate investigation targets only when they are relevant to the active question.*
 
 | Function | Archetype | Coverage | Size (bytes) |
 |---|---|---|---|
@@ -52,7 +52,7 @@ High coverage = predictable, classify cheaply. Low coverage = novel, spend LLM b
 | `FUN_180013930` | GUARD_SIMPLE | 0.147 | 556 |
 | *(+4 more large functions)* | | | |
 
-#### Specific Implementations (smaller novel functions)
+#### Smaller Novel Functions
 
 | Function | Archetype | Coverage | Size (bytes) |
 |---|---|---|---|
@@ -78,7 +78,7 @@ High coverage = predictable, classify cheaply. Low coverage = novel, spend LLM b
 | `FUN_18009697e` | GUARD_SIMPLE | 0.010 | 57 |
 | *(+433 more)* | | | |
 
-### Infrastructure Functions (low coverage but likely utility — lower priority)
+### Likely Infrastructure Despite Low Coverage
 
 *Hypothesis: CALLER/REGISTER_HEAVY + size < 48 bytes + utility name = wrapper.*
 *The function body is trivial — but functions with many callers (★) are structural hubs.*
@@ -103,7 +103,7 @@ High coverage = predictable, classify cheaply. Low coverage = novel, spend LLM b
 | `FUN_180098f84` | CALLER | 0.007 | 1 |
 | *(+284 more)* | | | |
 
-### Classify Cheaply (coverage ≥ 0.60 — highly predictable)
+### Structurally Predictable (coverage ≥ 0.60 — usually cheaper to understand)
 
 | Function | Archetype | Coverage |
 |---|---|---|
