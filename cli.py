@@ -202,6 +202,18 @@ def cmd_brief(args):
             print(label)
         return
 
+    active_question = ""
+    if not args.label and not args.list:
+        try:
+            import investigation
+            state = investigation.load()
+            if state:
+                active_question = state.get("question", "")
+                if state.get("target"):
+                    args.label = state["target"]
+        except Exception:
+            pass
+
     if not args.label:
         labels = cached_labels
         if not missing:
@@ -246,6 +258,7 @@ def cmd_brief(args):
     elif args.json:
         print(json.dumps({
             "binary": args.label,
+            "active_question": active_question,
             "brief": brief_path,
             **packet,
             "coverage_boundary": "structural orientation; not behavioral proof",
@@ -266,9 +279,9 @@ def cmd_brief(args):
 # ── command: capabilities ─────────────────────────────────────────────────────
 
 _CAPABILITIES = [
-    ("orient", "What do we know, what is missing, and what should be investigated next?",
-     ["status", "next", "floors", "holes"]),
-    ("structural-map", "What kind of program structure is present, and where is the unusual code?",
+    ("frame", "What are we actually trying to understand, what hypotheses are live, and when should we stop?",
+     ["investigation", "status"]),
+    ("orient", "What structural evidence helps answer the active question?",
      ["brief", "graph-metrics", "inspect-calltree"]),
     ("function-behavior", "What does this specific function appear to do for concrete inputs?",
      ["classify", "dynamic/nano_sim.py", "dynamic/slice_sim.py"]),
@@ -753,6 +766,47 @@ def main():
     )
     sub = ap.add_subparsers(dest="command", required=True)
 
+    # Question-relative investigation state. One discoverable surface; subactions
+    # preserve hypotheses/evidence/stop conditions without making the LLM remember files.
+    p_inv = sub.add_parser("investigation", help="Show or update the active investigation")
+    inv = p_inv.add_subparsers(dest="investigation_action")
+
+    inv.add_parser("show", help="Show compact active investigation state")
+
+    p_new = inv.add_parser("new", help="Start a new question-relative investigation")
+    p_new.add_argument("question")
+    p_new.add_argument("--target", default="")
+    p_new.add_argument("--goal", default="")
+    p_new.add_argument("--decision", default="", help="What a useful result must enable")
+    p_new.add_argument("--stop", default="", help="Explicit stopping condition")
+    p_new.add_argument("--constraint", action="append", default=[])
+
+    p_h = inv.add_parser("hypothesis", help="Record a live hypothesis")
+    p_h.add_argument("text")
+    p_h.add_argument("--prior", default="plausible")
+    p_h.add_argument("--why-prior", default="")
+
+    p_hs = inv.add_parser("hypothesis-status", help="Update a hypothesis after evidence")
+    p_hs.add_argument("id")
+    p_hs.add_argument("status", choices=["open", "supported", "weakened", "rejected"])
+
+    p_ev = inv.add_parser("evidence", help="Record an observation and what it bears on")
+    p_ev.add_argument("observation")
+    p_ev.add_argument("--source", default="")
+    p_ev.add_argument("--supports", nargs="*", default=[])
+    p_ev.add_argument("--contradicts", nargs="*", default=[])
+
+    p_un = inv.add_parser("uncertainty", help="Record a consequential unresolved question")
+    p_un.add_argument("text")
+
+    p_nx = inv.add_parser("next", help="Record the cheapest next discriminating action")
+    p_nx.add_argument("action")
+    p_nx.add_argument("--why", default="")
+
+    p_close = inv.add_parser("close", help="Close when the stopping rule has been met")
+    p_close.add_argument("result")
+    p_close.add_argument("--residual", default="")
+
     # Structural brief: one operational capability over the multi-stage P-Code pipeline.
     p_brief = sub.add_parser("brief", help="Produce a compact structural brief for a binary")
     p_brief.add_argument("label", nargs="?", help="Analyzed binary label")
@@ -768,9 +822,9 @@ def main():
     p_caps = sub.add_parser("capabilities", help="Map investigation questions to available capabilities")
     p_caps.add_argument("--json", action="store_true", help="Machine-readable capability map")
 
-    # analysis orientation — implemented in analyze.py, exposed here so cli.py
-    # remains the single discoverable toolkit entry point.
-    sub.add_parser("status", help="Show overall analysis state")
+    # High-level state is question-relative. The older analyze.py commands remain
+    # available below for target-specific hole maps, but they do not define status.
+    sub.add_parser("status", help="Show active question, stop rule, next action, and available structural evidence")
     p_next = sub.add_parser("next", help="Show functions to investigate next")
     p_next.add_argument("n", type=int, nargs="?", default=10, help="Number to show (default 10)")
     sub.add_parser("floors", help="Show named analysis floors")
@@ -881,9 +935,10 @@ def main():
         "inspect-calltree": lambda a: _cmd_inspect_calltree(a),
         "read-func":        lambda a: _cmd_read_func(a),
         "vtable-resolve":   lambda a: _cmd_vtable_resolve(a),
+        "investigation":  cmd_investigation,
         "brief":          cmd_brief,
         "capabilities":   cmd_capabilities,
-        "status":         lambda _: __import__("analyze").cmd_status(),
+        "status":         cmd_status,
         "next":           lambda a: __import__("analyze").cmd_next(a.n),
         "floors":         lambda _: __import__("analyze").cmd_floor(),
         "holes":          lambda _: __import__("analyze").cmd_holes(),
