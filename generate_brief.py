@@ -61,7 +61,7 @@ ARCHETYPE_DESC = {
     'ARITHMETIC':      'Integer computation without significant memory access. Pure algorithm.',
     'FLOAT_COMPUTE':   'Floating-point operations. Signal processing, physics, graphics math.',
     'MIXED':           'No single dominant pattern. Complex function — worth LLM attention.',
-    'NOISE':           'No cluster match. Structurally unusual — highest LLM exploration priority.',
+    'NOISE':           'No cluster match. Structurally unusual — potentially expensive to interpret; relevance must come from the active question.',
 }
 
 DOMAIN_FINGERPRINTS = {
@@ -312,12 +312,12 @@ def generate_brief(label: str, data: dict) -> str:
     lines.append('')
 
     # Exploration priority
-    lines.append('## LLM Exploration Priority')
+    lines.append('## Structural Novelty and Expected Investigation Cost')
     lines.append('')
-    lines.append('Functions ordered by grammar coverage (0.0 = matches no known pattern = explore first).')
+    lines.append('Functions ordered by grammar coverage (0.0 = matches no known pattern = structurally unusual).')
     lines.append('High coverage = structurally predictable and usually cheaper to understand; it does **not** mean semantically unimportant. Low coverage = structurally novel and usually deserves more LLM budget when relevant to the active question.')
     lines.append('')
-    lines.append('### Explore First (coverage ≤ 0.15 — structurally novel domain logic)')
+    lines.append('### Structurally Novel Candidates (coverage ≤ 0.15)')
     lines.append('')
 
     novel_domain = []
@@ -340,9 +340,9 @@ def generate_brief(label: str, data: dict) -> str:
         large = [f for f in orchestrators if f[3] >= SIZE_THRESHOLD]
 
         if large:
-            lines.append('#### Orchestrators / Controllers (large novel functions — explore these first)')
+            lines.append('#### Large Novel Functions (possible orchestrators/controllers)')
             lines.append('')
-            lines.append('*Large + low coverage = complex unique logic. These likely control subsystems.*')
+            lines.append('*Large + low coverage suggests expensive, unusual logic. Treat these as candidate investigation targets only when they are relevant to the active question.*')
             lines.append('')
             lines.append('| Function | Archetype | Coverage | Size (bytes) |')
             lines.append('|---|---|---|---|')
@@ -351,7 +351,7 @@ def generate_brief(label: str, data: dict) -> str:
             if len(large) > 10:
                 lines.append(f'| *(+{len(large)-10} more large functions)* | | | |')
             lines.append('')
-            lines.append('#### Specific Implementations (smaller novel functions)')
+            lines.append('#### Smaller Novel Functions')
             lines.append('')
 
         # Remaining: sort by coverage asc, then size desc
@@ -370,7 +370,7 @@ def generate_brief(label: str, data: dict) -> str:
     lines.append('')
 
     if novel_utility:
-        lines.append('### Infrastructure Functions (low coverage but likely utility — lower priority)')
+        lines.append('### Likely Infrastructure Despite Low Coverage')
         lines.append('')
         lines.append('*Hypothesis: CALLER/REGISTER_HEAVY + size < 48 bytes + utility name = wrapper.*')
         lines.append('*The function body is trivial — but functions with many callers (★) are structural hubs.*')
@@ -387,7 +387,7 @@ def generate_brief(label: str, data: dict) -> str:
             lines.append(f'| *(+{len(novel_utility)-15} more)* | | | |')
         lines.append('')
 
-    lines.append('### Structurally Predictable (coverage ≥ 0.60 — cheaper to understand)')
+    lines.append('### Structurally Predictable (coverage ≥ 0.60 — usually cheaper to understand)')
     lines.append('')
     common = [(n, cl, cov) for n, cl, cov in fn_coverage if cov is not None and cov >= 0.60]
     if common:
@@ -420,7 +420,7 @@ def generate_brief(label: str, data: dict) -> str:
     lines.append('')
     if isolation_pct > 30:
         lines.append(f'- **{isolation_pct:.0f}% of functions are statically opaque** (computed dispatch, vtables). '
-                     'These are the most domain-specific — start here.')
+                     'These are strong candidates for targeted investigation when the active question touches them; static call-graph evidence is weak here.')
     lines.append(f'- **Grammar coverage {mean_cov:.2f}** → '
                  + ('High: most functions match known C patterns. Budget is low per function, but question relevance still determines whether to inspect them.'
                     if mean_cov > 0.35
