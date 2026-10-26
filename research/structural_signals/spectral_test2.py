@@ -17,7 +17,7 @@ from collections import defaultdict
 
 from dynamic.pcode_sym import PCODESymEx
 from dynamic.execute import DLLExecutor
-from pe_utils import PE
+from structural.pe_utils import PE
 from dynamic.implication_graph import extract_constraint_nodes
 
 sys.stdout.reconfigure(line_buffering=True)
