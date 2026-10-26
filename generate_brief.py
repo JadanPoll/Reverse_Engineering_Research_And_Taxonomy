@@ -13,7 +13,7 @@ Usage:
   py -3.13 generate_brief.py advapi32 --out brief.md
 
 The brief assumes the pipeline has been run:
-  pcode_extractor.py → pcode_normalize.py → pcode_grammar.py → pcode_cluster.py → pcode_wl.py
+  structural.pcode_extractor → structural.pcode_normalize → structural.pcode_grammar → structural.pcode_cluster → structural.pcode_wl
 
 All inputs are pre-computed. Brief generation takes <5 seconds per binary.
 """
