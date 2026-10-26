@@ -78,16 +78,15 @@ def _compact_brief(markdown, max_functions=5):
         if len(rows) >= max_functions:
             break
 
-    parts = [overview]
-    if rows:
-        parts += ["## Highest-value initial targets", "\n".join(rows)]
-    parts.append(interpretation)
-    parts.append(
-        "## Evidence descent\n"
-        "The complete brief and underlying corpus artifacts remain available. "
-        "Inspect them only when the active question requires more detail."
-    )
-    return "\n\n".join(p for p in parts if p)
+    return {
+        "overview": overview,
+        "initial_targets": rows,
+        "interpretation": interpretation,
+        "evidence_descent": (
+            "The complete brief and underlying corpus artifacts remain available. "
+            "Inspect them only when the active question requires more detail."
+        ),
+    }
 
 
 def cmd_brief(args):
@@ -157,19 +156,26 @@ def cmd_brief(args):
         out.write(full)
 
     packet = _compact_brief(full, max_functions=args.targets)
+    brief_path = os.path.relpath(out_path, _here).replace("\\", "/")
     if args.full:
         print(full)
     elif args.json:
         print(json.dumps({
             "binary": args.label,
-            "brief": os.path.relpath(out_path, _here).replace("\\", "/"),
-            "packet": packet,
-            "coverage": "structural orientation; not behavioral proof",
-            "next": "descend into the full brief or targeted tools only if the active question requires it",
+            "brief": brief_path,
+            **packet,
+            "coverage_boundary": "structural orientation; not behavioral proof",
+            "next": "descend only if the active question requires more detail",
         }, indent=2))
     else:
-        print(packet)
-        print(f"\n[full brief: {os.path.relpath(out_path, _here)}]")
+        print(packet["overview"])
+        if packet["initial_targets"]:
+            print("\n## Highest-value initial targets")
+            print("\n".join(packet["initial_targets"]))
+        print("\n" + packet["interpretation"])
+        print("\n## Evidence descent")
+        print(packet["evidence_descent"])
+        print(f"\n[full brief: {brief_path}]")
 
 
 # ── command: capabilities ─────────────────────────────────────────────────────
@@ -185,8 +191,8 @@ _CAPABILITIES = [
      ["memory-observe", "struct-recover", "vtable-resolve", "dynamic/global_sim.py", "dynamic/runtime_probe.py"]),
     ("evidence", "How strong is the current claim and has independent evidence accumulated?",
      ["kb", "health", "pipeline_audit.py", "knowledge_bus.py"]),
-    ("extract", "How do I produce the static artifacts needed by the structural pipeline?",
-     ["ghidra_run.py", "pcode_extractor.py", "pcode_normalize.py", "pcode_grammar.py", "pcode_cluster.py", "pcode_wl.py"]),
+    ("extract", "How do I refresh the structural evidence behind the briefs?",
+     ["brief --rebuild-corpus", "ghidra_run.py"]),
 ]
 
 def cmd_capabilities(args):
