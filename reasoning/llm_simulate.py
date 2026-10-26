@@ -41,9 +41,9 @@ import os, sys, json, argparse, re
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 # ── Config ─────────────────────────────────────────────────────────────────────
-# Paths come from ground_truth.py (H=1). Fall back to local directory if absent.
+# Paths come from evidence.target_config when configured. Fall back to repo-root artifacts.
 
-_here = os.path.dirname(os.path.abspath(__file__))
+_here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _here not in sys.path:
     sys.path.insert(0, _here)
 try:
